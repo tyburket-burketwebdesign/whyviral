@@ -225,3 +225,45 @@ update entitlements set trial_used = 0 where account_id = 'the-account-uuid';
 ```
 
 Useful for a genuine false positive, or for grandfathering an early user.
+
+---
+
+# Sign-in: codes, not links
+
+Magic links fail in practice. Outlook and Gmail prefetch links to scan them for
+malware, which consumes a one-time link before the person ever clicks it. The
+result is `otp_expired` on a link the user never opened.
+
+Sign-in is therefore a **6-digit code**. A scanner cannot consume a code. The
+emailed link still works when it survives, and a dead one now lands on the
+sign-in screen with an explanation instead of a blank page.
+
+## Supabase setup
+
+**Authentication → Emails → Magic Link** — the template must include the token:
+
+```
+<p>Your WhyViral sign-in code:</p>
+<h2>{{ .Token }}</h2>
+<p>Or use this link: <a href="{{ .ConfirmationURL }}">Sign in</a></p>
+<p>The code expires in one hour.</p>
+```
+
+`{{ .Token }}` is the 6-digit code. Without it the email arrives with only a
+link and the code box cannot be completed.
+
+**Authentication → URL Configuration**
+- Site URL: `https://whyviral.io`
+- Redirect URLs: `https://whyviral.io/**`
+
+**Authentication → Providers → Email**
+- Confirm email: **off** (a code confirms by itself)
+- OTP expiry: 3600 seconds
+
+## Note on the built-in email service
+
+Supabase's default SMTP is rate limited to a handful of messages per hour and
+is not meant for production. Before launch, connect your own sender under
+**Project Settings → Authentication → SMTP Settings** — Resend, Postmark and
+SendGrid all have free tiers. Skipping this means sign-in emails silently stop
+arriving on your first busy day.

@@ -501,47 +501,63 @@ async function refreshAccount() {
   return s;
 }
 
+let authEmail = '';
 const sendBtn = $('#auth-send');
-if (sendBtn) sendBtn.onclick = async () => {
+const showAuthError = m => { const e = $('#auth-error'); e.textContent = m; e.hidden = false; };
+
+async function requestCode() {
   const email = ($('#auth-email').value || '').trim();
-  const err = $('#auth-error'); err.hidden = true;
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-    err.textContent = 'That email does not look right.'; err.hidden = false; return;
-  }
+  $('#auth-error').hidden = true;
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { showAuthError('That email does not look right.'); return; }
+  authEmail = email;
   sendBtn.disabled = true;
+  const original = sendBtn.textContent;
+  sendBtn.textContent = 'Sending…';
   try {
-    await WV_AUTH.sendMagicLink(email);
-    $('#auth-sent').hidden = false;
-    sendBtn.textContent = 'Link sent';
+    await WV_AUTH.sendCode(email);
+    $('#auth-step2').hidden = false;
+    sendBtn.textContent = 'Code sent';
+    $('#auth-code').focus();
   } catch (e) {
-    err.textContent = String(e.message || e); err.hidden = false;
+    showAuthError(String(e.message || e));
     sendBtn.disabled = false;
+    sendBtn.textContent = original;
   }
-};
+}
+if (sendBtn) sendBtn.onclick = requestCode;
 
-let chosenPlan = 'monthly';
-document.querySelectorAll('.plan-opt').forEach(b => {
-  b.onclick = () => {
-    document.querySelectorAll('.plan-opt').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    chosenPlan = b.dataset.plan;
-  };
-});
+const resendBtn = $('#auth-resend');
+if (resendBtn) resendBtn.onclick = () => { sendBtn.disabled = false; requestCode(); };
 
-const payManage = $('#paywall-manage');
-if (payManage) payManage.onclick = async () => {
-  payManage.disabled = true;
+const verifyBtn = $('#auth-verify');
+async function submitCode() {
+  const code = ($('#auth-code').value || '').trim();
+  $('#auth-error').hidden = true;
+  verifyBtn.disabled = true;
+  verifyBtn.textContent = 'Checking…';
   try {
-    const r = await WV_AUTH.apiFetch('/api/portal', { method: 'POST' });
-    const j = await r.json();
-    if (j.url) { location.href = j.url; return; }
-    throw new Error(j.message || 'Billing portal unavailable.');
+    await WV_AUTH.verifyCode(authEmail, code);
+    WV_AUTH.invalidate();
+    await refreshAccount();
+    toast('Signed in');
+    show('welcome');
   } catch (e) {
-    $('#paywall-error').textContent = String(e.message || e);
-    $('#paywall-error').hidden = false;
-    payManage.disabled = false;
+    showAuthError(String(e.message || e));
+    verifyBtn.disabled = false;
+    verifyBtn.textContent = 'Sign in';
   }
-};
+}
+if (verifyBtn) verifyBtn.onclick = submitCode;
+
+const codeInput = $('#auth-code');
+if (codeInput) {
+  codeInput.addEventListener('input', () => {
+    codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, 6);
+    if (codeInput.value.length === 6) submitCode();     /* auto-submit on the 6th digit */
+  });
+  codeInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitCode(); });
+}
+$('#auth-email')?.addEventListener('keydown', e => { if (e.key === 'Enter') requestCode(); });
 
 const payGo = $('#paywall-go');
 if (payGo) payGo.onclick = async () => {
@@ -566,6 +582,15 @@ if (payGo) payGo.onclick = async () => {
 };
 
 (async function bootAccount() {
-  if (WV_AUTH.captureRedirect()) WV_AUTH.invalidate();
+  const result = WV_AUTH.captureRedirect();
+  if (result === 'signed-in') {
+    WV_AUTH.invalidate();
+    toast('Signed in');
+  } else if (typeof result === 'string' && result) {
+    /* A dead magic link used to leave a blank page. Say what happened and
+       put them straight back into the code flow. */
+    show('auth');
+    showAuthError(result);
+  }
   await refreshAccount();
 })();

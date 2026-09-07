@@ -66,7 +66,7 @@ const WV_AUTH = (function () {
     return s;
   }
 
-  async function sendMagicLink(email) {
+  async function sendCode(email) {
     if (!configured()) throw new Error('Sign-in is not configured yet.');
     await sb('/auth/v1/otp', {
       method: 'POST',
@@ -75,11 +75,42 @@ const WV_AUTH = (function () {
     return true;
   }
 
+  /* Verify a 6-digit code.
+
+     Codes exist because magic links are unreliable in practice: Outlook and
+     Gmail prefetch links to scan them for malware, which consumes a one-time
+     link before the person ever clicks it. A code cannot be consumed by a
+     scanner. The link still works when it survives — this is the fallback that
+     always works. */
+  async function verifyCode(email, code) {
+    if (!configured()) throw new Error('Sign-in is not configured yet.');
+    const token = String(code).replace(/\D/g, '');
+    if (token.length !== 6) throw new Error('Enter the 6-digit code from the email.');
+    const r = await sb('/auth/v1/verify', {
+      method: 'POST',
+      body: JSON.stringify({ email, token, type: 'email' }),
+    });
+    if (!r.access_token) throw new Error('That code did not work. Request a new one.');
+    writeSession({ ...r, expires_at: Math.floor(Date.now() / 1000) + (r.expires_in || 3600) });
+    return true;
+  }
+
   /* Supabase returns the session in the URL fragment. Read it, store it, and
      strip it from the address bar so tokens don't sit in history. */
+  /* Returns 'signed-in', an error string, or false. Supabase puts both the
+     session and any failure in the URL fragment. */
   function captureRedirect() {
     if (!location.hash || location.hash.length < 10) return false;
     const p = new URLSearchParams(location.hash.slice(1));
+
+    const errCode = p.get('error_code');
+    if (errCode) {
+      history.replaceState(null, '', location.pathname + location.search);
+      return errCode === 'otp_expired'
+        ? 'That link had already been used or expired. Email scanners often open links before you do — use the 6-digit code instead.'
+        : (p.get('error_description') || 'Sign-in failed.').replace(/\+/g, ' ');
+    }
+
     const access_token = p.get('access_token');
     if (!access_token) return false;
     writeSession({
@@ -88,7 +119,7 @@ const WV_AUTH = (function () {
       expires_at: Math.floor(Date.now() / 1000) + Number(p.get('expires_in') || 3600),
     });
     history.replaceState(null, '', location.pathname + location.search);
-    return true;
+    return 'signed-in';
   }
 
   function signOut() {
@@ -116,7 +147,7 @@ const WV_AUTH = (function () {
   }
 
   return {
-    deviceId, currentSession, sendMagicLink, captureRedirect, signOut,
+    deviceId, currentSession, sendCode, verifyCode, captureRedirect, signOut,
     apiFetch, status, configured,
     invalidate: () => { cached = null; },
     isSignedIn: async () => !!(await currentSession()),

@@ -415,3 +415,11 @@ textarea{resize:vertical;min-height:62px;font-size:14px;margin-top:7px}
 #screen-auth .field{margin-bottom:18px}
 #screen-auth h2{margin-bottom:8px}
 .auth-alt{font-size:13px;color:var(--ink-3);text-align:center;margin-top:16px;line-height:1.6}
+
+/* ---------- one-time code ---------- */
+.code-input{
+  font-family:'JetBrains Mono',monospace !important;font-size:26px !important;
+  letter-spacing:.34em;text-align:center;padding:14px 10px !important;
+}
+#auth-step2{margin-top:18px;padding-top:18px;border-top:1px solid var(--line-2)}
+#auth-step2 .btn-quiet{margin-top:8px}

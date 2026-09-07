@@ -16,7 +16,10 @@
 
 <header class="topbar">
   <button class="brand" id="brand-home" aria-label="WhyViral home"><span class="brand-why">why</span>viral</button>
-  <button class="ghost-btn" id="nav-history" hidden>Past breakdowns</button>
+  <div class="acct">
+    <span id="acct-state" hidden></span>
+    <button class="ghost-btn" id="nav-history" hidden>Past breakdowns</button>
+  </div>
 </header>
 
 <main id="app">
@@ -183,6 +186,41 @@
     <div id="scripts"></div>
   </section>
 
+  <!-- ===== SIGN IN ===== -->
+  <section class="screen" id="screen-auth">
+    <button class="back" data-back="welcome">Back</button>
+    <h2 id="auth-title">Save your breakdowns</h2>
+    <p class="lede sm" id="auth-lede">Enter your email and we'll send a sign-in link. No password to remember.</p>
+    <label class="field">
+      <span class="field-label">Email</span>
+      <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email" inputmode="email">
+    </label>
+    <p class="error" id="auth-error" hidden></p>
+    <p class="auth-sent" id="auth-sent" hidden>Check your inbox — the link signs you in on this device.</p>
+    <button class="btn btn-primary btn-block" id="auth-send">Send me a link</button>
+  </section>
+
+  <!-- ===== PAYWALL ===== -->
+  <section class="screen" id="screen-paywall">
+    <button class="back" data-back="welcome">Back</button>
+    <p class="eyebrow">You've used your free breakdowns</p>
+    <h2>Keep reverse-engineering</h2>
+    <p class="lede" id="paywall-lede">Unlimited breakdowns, unlimited scripts, and every analysis saved to your account.</p>
+    <div class="panel price-panel">
+      <div class="price-row"><span class="price-amount">$29</span><span class="price-per">/ month</span></div>
+      <ul class="price-list">
+        <li>Unlimited breakdowns</li>
+        <li>Up to 6 scripts per breakdown</li>
+        <li>Measured comparison against real underperformers</li>
+        <li>Comment mining and audience objections</li>
+        <li>Every analysis saved and searchable</li>
+      </ul>
+    </div>
+    <p class="error" id="paywall-error" hidden></p>
+    <button class="btn btn-primary btn-block" id="paywall-go">Subscribe</button>
+    <button class="btn btn-quiet btn-block" id="paywall-manage" hidden>Manage billing</button>
+  </section>
+
   <!-- ===== HISTORY ===== -->
   <section class="screen" id="screen-history">
     <button class="back" data-back="welcome">Back</button>
@@ -197,6 +235,16 @@
 <!-- Classic scripts, loaded in dependency order. Deliberately NOT type="module":
      modules are blocked by CORS on file://, which makes the page silently dead
      when someone just double-clicks index.html. -->
+<script>
+  /* Publishable values only. The anon key is designed to be public; the
+     service key and JWT secret live server-side and never appear here.
+     Leave blank to run the app with no accounts and no paywall. */
+  window.WHYVIRAL_CONFIG = {
+    supabaseUrl: "https://paylvdfhhkrddlwimofk.supabase.co",
+    supabaseAnonKey: "sb_publishable_CfV9o2KRZW3Vr0NnFBL_Ig_CiqC6Hfm"
+  };
+</script>
+<script src="auth.js"></script>
 <script src="comments.js"></script>
 <script src="engine.js"></script>
 <script src="scriptgen.js"></script>

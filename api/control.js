@@ -4,10 +4,16 @@
    what viral videos do, it is what they do that ordinary ones don't. */
 
 import { json, getHashtagVideos, searchVideos, normalizeVideoList } from './_provider.js';
+import { checkAccess, denyResponse } from './_gate.js';
 
 const MIN_USABLE = 6;
 
 async function onRequestGet({ request, env }) {
+  /* Gated, but deliberately not counted: the control set is part of one
+     analysis, not a separate billable action. */
+  const access = await checkAccess(env, request);
+  if (!access.allowed) return denyResponse(access);
+
   if (!env.SCRAPER_KEY) return json({ enabled: false, videos: [] }, 503, 0);
 
   const q = new URL(request.url).searchParams;

@@ -18,7 +18,8 @@ const { window } = dom;
 const errors = [];
 window.addEventListener('error', e => errors.push(e.message));
 
-window.fetch = async (url) => {
+window.fetch = async (url, init) => {
+  if (String(url).startsWith('/api/account')) return { ok: true, status: 200, json: async () => ({ billing: false, signedIn: false, plan: 'open', remaining: null }) };
   const m = String(url).match(/video%2F(\d)|video\/(\d)/);
   const key = m ? (m[1] || m[2]) : null;
   const data = FIXTURES[key];
@@ -39,11 +40,14 @@ const load = f => window.eval(
 );
 // engine + scriptgen are ES modules; inline them then app.js
 window.eval(`window.__mods = {};`);
+const authSrc = fs.readFileSync(path.join(dir, 'auth.js'), 'utf8');
+const cmtSrc = fs.readFileSync(path.join(dir, 'comments.js'), 'utf8').replace(/export /g, '');
 const engineSrc = fs.readFileSync(path.join(dir, 'engine.js'), 'utf8').replace(/export /g, '');
 const genSrc = fs.readFileSync(path.join(dir, 'scriptgen.js'), 'utf8').replace(/export /g, '');
 const appSrc = fs.readFileSync(path.join(dir, 'app.js'), 'utf8')
   .replace(/^import .*$/gm, '');
-window.eval(engineSrc + '\n' + genSrc + '\n' + appSrc);
+window.WHYVIRAL_CONFIG = { supabaseUrl: '', supabaseAnonKey: '' };
+window.eval(authSrc + '\n' + cmtSrc + '\n' + engineSrc + '\n' + genSrc + '\n' + appSrc);
 
 const $ = s => window.document.querySelector(s);
 let pass = 0, fail = 0;

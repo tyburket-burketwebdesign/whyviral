@@ -2,7 +2,7 @@
    declaring the same top-level name is a hard SyntaxError that takes the whole
    page down. This guards the trade-off made when we dropped ES modules. */
 import fs from 'fs';
-const FILES = ['public/comments.js', 'public/engine.js', 'public/scriptgen.js', 'public/app.js'];
+const FILES = ['public/auth.js', 'public/comments.js', 'public/engine.js', 'public/scriptgen.js', 'public/app.js'];
 const RE = /^(?:const|let|var|function|async function|class)\s+([A-Za-z_$][\w$]*)/gm;
 
 let pass = 0, fail = 0;

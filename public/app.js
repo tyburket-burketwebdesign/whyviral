@@ -72,9 +72,13 @@ for (let i = 0; i < MIN; i++) addRow();
 /* Tier 1: /api/enrich — full metadata, transcript, engagement. Needs a key.
    Tier 2: /api/oembed — caption and author only. Free, always available.
    Tier 3: whatever the user pasted by hand. */
+/* Set when any API call comes back 402 so the run can stop and show the wall. */
+let paywallHit = null;
+
 async function fetchVideo(url) {
   try {
-    const r = await fetch('/api/enrich?url=' + encodeURIComponent(url), { headers: { accept: 'application/json' } });
+    const r = await WV_AUTH.apiFetch('/api/enrich?url=' + encodeURIComponent(url), { headers: { accept: 'application/json' } });
+    if (r.status === 402 || r.status === 401) { paywallHit = await r.json().catch(() => ({})); return { caption: '', tier: 'blocked', ok: false }; }
     if (r.ok) {
       const j = await r.json();
       if (j && j.enabled) return { ...j, tier: 'enriched', ok: true };
@@ -82,7 +86,7 @@ async function fetchVideo(url) {
   } catch { /* fall through */ }
 
   try {
-    const r = await fetch('/api/oembed?url=' + encodeURIComponent(url), { headers: { accept: 'application/json' } });
+    const r = await WV_AUTH.apiFetch('/api/oembed?url=' + encodeURIComponent(url), { headers: { accept: 'application/json' } });
     if (!r.ok) throw new Error('status ' + r.status);
     const j = await r.json();
     if (!j || (!j.title && !j.author_name)) throw new Error('empty');
@@ -96,7 +100,7 @@ async function fetchControl(topic, tag, excludeIds) {
   try {
     const qs = new URLSearchParams({ topic, exclude: excludeIds.join(',') });
     if (tag) qs.set('tag', tag);
-    const r = await fetch('/api/control?' + qs, { headers: { accept: 'application/json' } });
+    const r = await WV_AUTH.apiFetch('/api/control?' + qs, { headers: { accept: 'application/json' } });
     if (!r.ok) return null;
     const j = await r.json();
     return (j && j.enabled && j.sufficient) ? j : null;
@@ -165,6 +169,14 @@ $('#start-analysis').onclick = async () => {
       followerCount: m.followerCount, stats: m.stats, rates: m.rates, id: m.id,
     };
   }));
+
+  if (paywallHit) {
+    btn.disabled = false;
+    renderPaywall(paywallHit);
+    paywallHit = null;
+    show(paywallHit === null && WV_AUTH.configured() ? 'paywall' : 'paywall');
+    return;
+  }
 
   const usable = metas.filter(m => (m.caption + (m.overlay || '') + (m.transcript || '')).trim().length > 0);
   if (usable.length < 2) {
@@ -448,3 +460,78 @@ $('#topic').addEventListener('keydown', e => { if (e.key === 'Enter') rows[0]?.q
 
 /* Load sentinel — the inline guard in index.html watches for this. */
 window.__wfReady = true;
+
+
+/* ---------------- accounts, trial, paywall ---------------- */
+function renderPaywall(info) {
+  const lede = $('#paywall-lede');
+  if (info && info.message) lede.textContent = info.message + ' Unlimited breakdowns, scripts and saved history.';
+  $('#paywall-error').hidden = true;
+}
+
+async function refreshAccount() {
+  const s = await WV_AUTH.status(true);
+  const bar = $('#acct-state');
+  if (!bar) return s;
+  bar.innerHTML = '';
+  if (!s.billing) { bar.hidden = true; return s; }
+  bar.hidden = false;
+
+  if (s.subscribed) {
+    bar.appendChild(el('span', 'trial-pill', 'Pro'));
+  } else if (typeof s.remaining === 'number') {
+    bar.appendChild(el('span', 'trial-pill', `${s.remaining} free left`));
+  }
+  const btn = el('button', 'ghost-btn', s.signedIn ? 'Sign out' : 'Sign in');
+  btn.onclick = async () => {
+    if (s.signedIn) { WV_AUTH.signOut(); WV_AUTH.invalidate(); await refreshAccount(); show('welcome'); }
+    else show('auth');
+  };
+  bar.appendChild(btn);
+  return s;
+}
+
+const sendBtn = $('#auth-send');
+if (sendBtn) sendBtn.onclick = async () => {
+  const email = ($('#auth-email').value || '').trim();
+  const err = $('#auth-error'); err.hidden = true;
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    err.textContent = 'That email does not look right.'; err.hidden = false; return;
+  }
+  sendBtn.disabled = true;
+  try {
+    await WV_AUTH.sendMagicLink(email);
+    $('#auth-sent').hidden = false;
+    sendBtn.textContent = 'Link sent';
+  } catch (e) {
+    err.textContent = String(e.message || e); err.hidden = false;
+    sendBtn.disabled = false;
+  }
+};
+
+const payGo = $('#paywall-go');
+if (payGo) payGo.onclick = async () => {
+  const signedIn = await WV_AUTH.isSignedIn();
+  if (!signedIn) {
+    $('#auth-title').textContent = 'Sign in to subscribe';
+    $('#auth-lede').textContent = 'We need an email to attach your subscription to. No password required.';
+    show('auth');
+    return;
+  }
+  payGo.disabled = true;
+  try {
+    const r = await WV_AUTH.apiFetch('/api/checkout', { method: 'POST' });
+    const j = await r.json();
+    if (j.url) { location.href = j.url; return; }
+    throw new Error(j.message || 'Checkout is not available yet.');
+  } catch (e) {
+    $('#paywall-error').textContent = String(e.message || e);
+    $('#paywall-error').hidden = false;
+    payGo.disabled = false;
+  }
+};
+
+(async function bootAccount() {
+  if (WV_AUTH.captureRedirect()) WV_AUTH.invalidate();
+  await refreshAccount();
+})();

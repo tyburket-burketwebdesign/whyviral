@@ -20,7 +20,8 @@ const V = {
 };
 let controlCalls = 0, enrichCalls = 0;
 
-window.fetch = async (url) => {
+window.fetch = async (url, init) => {
+  if (String(url).startsWith('/api/account')) return { ok: true, status: 200, json: async () => ({ billing: false, signedIn: false, plan: 'open', remaining: null }) };
   const u = String(url);
   if (u.startsWith('/api/control')) {
     controlCalls++;
@@ -58,8 +59,11 @@ Object.defineProperty(window, 'localStorage', {
   value: { getItem: k => store[k] ?? null, setItem: (k, v) => { store[k] = String(v); }, removeItem: k => { delete store[k]; } },
 });
 
+window.WHYVIRAL_CONFIG = { supabaseUrl: '', supabaseAnonKey: '' };
 window.eval(
+  fs.readFileSync(path.join(dir, 'auth.js'), 'utf8') + '\n' +
   fs.readFileSync(path.join(dir, 'engine.js'), 'utf8').replace(/export /g, '') + '\n' +
+  fs.readFileSync(path.join(dir, 'comments.js'), 'utf8').replace(/export /g, '') + '\n' +
   fs.readFileSync(path.join(dir, 'scriptgen.js'), 'utf8').replace(/export /g, '') + '\n' +
   fs.readFileSync(path.join(dir, 'app.js'), 'utf8').replace(/^import .*$/gm, '')
 );

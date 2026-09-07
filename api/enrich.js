@@ -5,8 +5,14 @@
 
 import { json, validTikTokUrl, resolveShort, getVideo, getTranscript, getComments,
          normalizeVideo, normalizeTranscript, normalizeComments } from './_provider.js';
+import { checkAccess, commitUsage, denyResponse } from './_gate.js';
 
 async function onRequestGet({ request, env }) {
+  /* Entitlement first: never spend an API credit on a request that isn't
+     allowed to have one. */
+  const access = await checkAccess(env, request);
+  if (!access.allowed) return denyResponse(access);
+
   if (!env.SCRAPER_KEY) return json({ enabled: false, reason: 'no key configured' }, 503, 0);
 
   const target = new URL(request.url).searchParams.get('url');
@@ -30,8 +36,12 @@ async function onRequestGet({ request, env }) {
     }
     const t = normalizeTranscript(transcript);
 
+    /* Only now, with real data in hand, does this count against the trial. */
+    await commitUsage(env, access, 'enrich', { id: video.id });
+
     return json({
       enabled: true,
+      access: { mode: access.mode, remaining: access.remaining ?? null },
       ...video,
       transcript: t.text,
       subtitleTracks: t.tracks,

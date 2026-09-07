@@ -35,7 +35,11 @@ async function onRequestGet({ request, env }) {
       plan: ent.plan,
       status: ent.status,
       subscribed: active,
-      remaining: active ? null : Math.max(0, ent.trial_limit - ent.trial_used),
+      trialMode: (env.TRIAL_MODE || 'free').toLowerCase(),
+      trialDays: Number(env.TRIAL_DAYS || 7),
+      remaining: active ? null
+        : ((env.TRIAL_MODE || 'free').toLowerCase() === 'card' ? 0
+           : Math.max(0, ent.trial_limit - ent.trial_used)),
       trialLimit: ent.trial_limit,
       renewsAt: ent.current_period_end || null,
       cancelAtPeriodEnd: !!ent.cancel_at_period_end,

@@ -86,3 +86,142 @@ as access, which catches a webhook that never landed.
 
 Test with Stripe's **test clock** to fast-forward trials and failed payments
 instead of waiting days.
+
+---
+
+# Stripe
+
+## 1. Create the products
+
+Stripe Dashboard → **Product catalog → Add product**
+
+- **WhyViral Pro** — recurring, **$29.00 / month**
+- Add a second price on the same product — recurring, **$290.00 / year**
+
+Copy both price ids (`price_...`). They are not the product id.
+
+## 2. Environment variables
+
+Vercel → Settings → Environment Variables, all three environments:
+
+| Name | Value |
+|---|---|
+| `STRIPE_SECRET_KEY` | `sk_test_...` while testing, `sk_live_...` at launch |
+| `STRIPE_PRICE_ID` | monthly price id |
+| `STRIPE_PRICE_ID_ANNUAL` | annual price id |
+| `STRIPE_WEBHOOK_SECRET` | from step 3 |
+| `TRIAL_MODE` | `card` |
+| `TRIAL_DAYS` | `7` |
+| `SITE_URL` | `https://whyviral.io` |
+
+## 3. The webhook
+
+Stripe → **Developers → Webhooks → Add endpoint**
+
+- URL: `https://whyviral.io/api/stripe-webhook`
+- Events: `checkout.session.completed`, `customer.subscription.created`,
+  `customer.subscription.updated`, `customer.subscription.deleted`,
+  `invoice.paid`, `invoice.payment_failed`
+
+Copy the signing secret (`whsec_...`) into `STRIPE_WEBHOOK_SECRET`, then redeploy.
+
+The signature is verified before anything is trusted. Without that, this URL is
+public and anyone could POST a fake "subscription active" event to grant
+themselves an account.
+
+## 4. Enable the Billing Portal
+
+Stripe → **Settings → Billing → Customer portal** → activate. Allow customers to
+cancel and update payment methods. `/api/portal` returns a link to it, so cancel
+and card-update flows are handled by Stripe rather than built here.
+
+## 5. Test before going live
+
+Use test keys and card `4242 4242 4242 4242`, any future expiry, any CVC.
+
+1. Sign in, click **Start free trial** → Stripe Checkout appears
+2. Complete it → you land back on the site
+3. `/api/account` should report `"status":"trialing"` and `"subscribed":true`
+4. Run an analysis — it should work
+5. Cancel via **Manage billing** → status becomes `canceled` at period end
+
+Use Stripe's **test clock** to fast-forward trial expiry and failed payments
+rather than waiting seven days.
+
+## 6. Switching the trial model
+
+`TRIAL_MODE=card` — account and card up front, Stripe runs the trial.
+`TRIAL_MODE=free` — three analyses, no card, first one without signup.
+
+One variable, no code change. Card-required converts better per signup but
+typically cuts total signups by 60–80%. If signups look thin in week one, flip
+to `free` and compare — the gate and the UI both follow the variable.
+
+## 7. Two things already handled
+
+**One trial per account, ever.** `trial_used` is set to 999 once a subscription
+exists, so cancel-and-resubscribe cannot farm new trials.
+
+**Stale subscriptions.** If `current_period_end` is more than a day in the past,
+access is refused rather than granted — that catches a webhook that never
+landed, which would otherwise be silent free access.
+
+---
+
+# Stopping repeat trials
+
+The attack is not sophisticated: a second email for a second seven days. Three
+signals catch nearly all of it.
+
+| Signal | Beats | Strength |
+|---|---|---|
+| Normalised email | gmail dots, `+aliases`, casing | catches the laziest attempt |
+| Device id | same browser, new email | medium — cleared cookies defeat it |
+| **Card fingerprint** | new email, new browser | **strong — needs a different card** |
+
+Plus a disposable-domain blocklist, so `mailinator.com` and friends never get a
+trial at all.
+
+## How it behaves
+
+Email and device are checked at checkout, before the session is created. If
+either was already used, `trial_period_days` is simply omitted — the person goes
+straight to a paying subscription.
+
+The card fingerprint only exists after payment details are entered, so the
+webhook handles it. If the card already claimed a trial, the subscription's
+trial is ended immediately rather than cancelled. **A repeat trialler becomes a
+paying customer instead of a support ticket.**
+
+Enforcement is the `trial_claims` primary key, not an application check.
+Checking first and inserting after would race: two simultaneous checkouts would
+both pass. Here the second insert simply fails.
+
+## Deliberate choices
+
+**Nobody is blocked from signing up**, only from a second free trial. Blocking
+accounts outright creates support email and punishes real people.
+
+**A shared device blocks a second trial.** Two people in one household on one
+laptop, each with their own card, get one trial between them. That is a real
+false positive. It is acceptable because the alternative — dropping the device
+signal — leaves the second-easiest bypass wide open. If you get complaints,
+remove `device` from `trialSignals()`; card fingerprint still holds the line.
+
+**Failures fail open.** If the claims table is unreachable the trial is granted.
+Losing a few trials to an outage beats blocking paying customers.
+
+## What this does not stop
+
+Someone with several real cards and several real email addresses. Stopping that
+needs identity verification, which costs more in lost signups than the trials
+are worth. Stripe Radar can add velocity rules later if it ever matters.
+
+## Reset a trial by hand
+
+```sql
+delete from trial_claims where account_id = 'the-account-uuid';
+update entitlements set trial_used = 0 where account_id = 'the-account-uuid';
+```
+
+Useful for a genuine false positive, or for grandfathering an early user.

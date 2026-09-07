@@ -138,5 +138,41 @@ export async function getEntitlement(env, accountId) {
 export const recordUsage = (env, accountId, kind, meta = null) =>
   dbInsert(env, 'usage_events', { account_id: accountId, kind, meta }, 'return=minimal');
 
+/* Try to reserve a trial against every identity signal at once.
+
+   The database does the enforcement: (kind, value) is a primary key, so a
+   duplicate insert fails. Checking first and inserting after would race — two
+   simultaneous checkouts would both pass. */
+export async function claimTrial(env, accountId, signals) {
+  if (!signals?.length) return { granted: true, conflicts: [] };
+
+  const conflicts = [];
+  for (const s of signals) {
+    const existing = await dbSelect(env,
+      `/trial_claims?kind=eq.${encodeURIComponent(s.kind)}&value=eq.${encodeURIComponent(s.value)}&select=account_id&limit=1`);
+    if (existing?.length) {
+      if (existing[0].account_id !== accountId) conflicts.push(s.kind);
+      continue;               /* already ours — not a conflict */
+    }
+    try {
+      await dbInsert(env, 'trial_claims', { kind: s.kind, value: s.value, account_id: accountId }, 'return=minimal');
+    } catch (e) {
+      /* 409 means another request won the race for this signal. */
+      if (e.status === 409) conflicts.push(s.kind); else throw e;
+    }
+  }
+  return { granted: conflicts.length === 0, conflicts };
+}
+
+/* Read-only check, for deciding trial length before a card exists. */
+export async function trialAlreadyUsed(env, accountId, signals) {
+  for (const s of signals) {
+    const rows = await dbSelect(env,
+      `/trial_claims?kind=eq.${encodeURIComponent(s.kind)}&value=eq.${encodeURIComponent(s.value)}&select=account_id&limit=1`);
+    if (rows?.length && rows[0].account_id !== accountId) return true;
+  }
+  return false;
+}
+
 export const bumpTrial = (env, accountId, used) =>
   dbPatch(env, `/entitlements?account_id=eq.${accountId}`, { trial_used: used + 1, updated_at: new Date().toISOString() });

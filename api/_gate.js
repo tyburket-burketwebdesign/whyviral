@@ -52,6 +52,24 @@ export async function checkAccess(env, request) {
 
   const ent = await getEntitlement(env, account.id);
 
+  /* TRIAL_MODE decides how people get in before they pay.
+       'card'  — account and card required up front. Stripe runs the trial.
+       'free'  — N analyses with no card, no signup for the first one.
+     One variable, because this is a conversion decision you will want to
+     revisit with real numbers rather than a rewrite. */
+  const mode = (env.TRIAL_MODE || 'free').toLowerCase();
+
+  if (mode === 'card' && !ACTIVE.has(ent.status)) {
+    if (!account.email) {
+      return { allowed: false, reason: 'signup_required', status: 401,
+               message: 'Create an account to start your free trial.',
+               account, entitlement: ent };
+    }
+    return { allowed: false, reason: 'subscription_required', status: 402,
+             message: `Start your ${env.TRIAL_DAYS || 7}-day free trial to run breakdowns.`,
+             account, entitlement: ent };
+  }
+
   if (ACTIVE.has(ent.status)) {
     /* Trust Stripe's status, but a period end well in the past means the
        webhook never landed. Treat that as expired rather than free access. */

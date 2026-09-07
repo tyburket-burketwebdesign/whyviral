@@ -113,3 +113,25 @@ drop trigger if exists accounts_ensure_entitlement on accounts;
 create trigger accounts_ensure_entitlement
   after insert on accounts
   for each row execute function ensure_entitlement();
+
+-- ------------------------------------------------------------ trial_claims
+-- One row per identity signal that has consumed a trial. The unique constraint
+-- is what actually enforces it: a second account presenting the same
+-- normalised email, device or card fingerprint cannot insert, so it gets no
+-- trial. Denied a trial, not denied an account — they can still subscribe.
+create table if not exists trial_claims (
+  kind       text not null,               -- 'email' | 'device' | 'card'
+  value      text not null,
+  account_id uuid not null references accounts(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (kind, value)
+);
+
+create index if not exists trial_claims_account_idx on trial_claims(account_id);
+
+alter table trial_claims enable row level security;
+-- No client policy at all: only the service role touches this table.
+
+-- Normalised email lives on the account so duplicates are visible in queries.
+alter table accounts add column if not exists email_normalized text;
+create index if not exists accounts_email_norm_idx on accounts(email_normalized);

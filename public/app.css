@@ -398,3 +398,12 @@ textarea{resize:vertical;min-height:62px;font-size:14px;margin-top:7px}
 .price-list{list-style:none;margin:0}
 .price-list li{font-size:14.5px;color:var(--ink-2);padding:7px 0 7px 24px;position:relative;line-height:1.5}
 .price-list li::before{content:"";position:absolute;left:0;top:14px;width:11px;height:2px;background:var(--pink);border-radius:2px}
+
+/* ---------- plan toggle ---------- */
+.plan-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.plan-opt{
+  font-family:inherit;font-size:14px;background:var(--paper);border:1px solid var(--line);
+  border-radius:10px;padding:12px 10px;cursor:pointer;color:var(--ink-2);line-height:1.3;
+}
+.plan-opt.active{border-color:var(--pink);color:var(--ink);box-shadow:0 0 0 3px rgba(255,61,139,.1)}
+.plan-save{display:block;font-size:11px;color:var(--pink-deep);margin-top:3px}

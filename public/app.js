@@ -478,7 +478,10 @@ async function refreshAccount() {
   bar.hidden = false;
 
   if (s.subscribed) {
-    bar.appendChild(el('span', 'trial-pill', 'Pro'));
+    bar.appendChild(el('span', 'trial-pill', s.status === 'trialing' ? 'Trial' : 'Pro'));
+    const m = $('#paywall-manage'); if (m) m.hidden = false;
+  } else if (s.trialMode === 'card') {
+    bar.appendChild(el('span', 'trial-pill', `${s.trialDays || 7}-day trial`));
   } else if (typeof s.remaining === 'number') {
     bar.appendChild(el('span', 'trial-pill', `${s.remaining} free left`));
   }
@@ -509,6 +512,30 @@ if (sendBtn) sendBtn.onclick = async () => {
   }
 };
 
+let chosenPlan = 'monthly';
+document.querySelectorAll('.plan-opt').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.plan-opt').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    chosenPlan = b.dataset.plan;
+  };
+});
+
+const payManage = $('#paywall-manage');
+if (payManage) payManage.onclick = async () => {
+  payManage.disabled = true;
+  try {
+    const r = await WV_AUTH.apiFetch('/api/portal', { method: 'POST' });
+    const j = await r.json();
+    if (j.url) { location.href = j.url; return; }
+    throw new Error(j.message || 'Billing portal unavailable.');
+  } catch (e) {
+    $('#paywall-error').textContent = String(e.message || e);
+    $('#paywall-error').hidden = false;
+    payManage.disabled = false;
+  }
+};
+
 const payGo = $('#paywall-go');
 if (payGo) payGo.onclick = async () => {
   const signedIn = await WV_AUTH.isSignedIn();
@@ -520,7 +547,7 @@ if (payGo) payGo.onclick = async () => {
   }
   payGo.disabled = true;
   try {
-    const r = await WV_AUTH.apiFetch('/api/checkout', { method: 'POST' });
+    const r = await WV_AUTH.apiFetch('/api/checkout?plan=' + chosenPlan, { method: 'POST' });
     const j = await r.json();
     if (j.url) { location.href = j.url; return; }
     throw new Error(j.message || 'Checkout is not available yet.');

@@ -172,7 +172,7 @@ $('#start-analysis').onclick = async () => {
 
   if (paywallHit) {
     btn.disabled = false;
-    renderPaywall(paywallHit);
+    renderPaywall(paywallHit, await WV_AUTH.status());
     paywallHit = null;
     show(paywallHit === null && WV_AUTH.configured() ? 'paywall' : 'paywall');
     return;
@@ -463,9 +463,15 @@ window.__wfReady = true;
 
 
 /* ---------------- accounts, trial, paywall ---------------- */
-function renderPaywall(info) {
-  const lede = $('#paywall-lede');
-  if (info && info.message) lede.textContent = info.message + ' Unlimited breakdowns, scripts and saved history.';
+function renderPaywall(info, acct) {
+  const card = (acct?.trialMode || 'card') === 'card';
+  const days = acct?.trialDays || 7;
+  $('#paywall-eyebrow').textContent = card ? `${days} days free, then $29` : "You've used your free breakdowns";
+  $('#paywall-title').textContent = card ? 'Reverse-engineer without limits' : 'Keep reverse-engineering';
+  $('#paywall-lede').textContent = card
+    ? `Try every feature free for ${days} days. Cancel any time from your account — no email required.`
+    : 'Unlimited breakdowns, unlimited scripts, and every analysis saved to your account.';
+  $('#paywall-go').textContent = card ? `Start ${days}-day free trial` : 'Subscribe';
   $('#paywall-error').hidden = true;
 }
 
@@ -485,6 +491,7 @@ async function refreshAccount() {
   } else if (typeof s.remaining === 'number') {
     bar.appendChild(el('span', 'trial-pill', `${s.remaining} free left`));
   }
+  try { renderPaywall(null, s); } catch {}
   const btn = el('button', 'ghost-btn', s.signedIn ? 'Sign out' : 'Sign in');
   btn.onclick = async () => {
     if (s.signedIn) { WV_AUTH.signOut(); WV_AUTH.invalidate(); await refreshAccount(); show('welcome'); }

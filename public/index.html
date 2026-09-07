@@ -198,13 +198,14 @@
     <p class="error" id="auth-error" hidden></p>
     <p class="auth-sent" id="auth-sent" hidden>Check your inbox — the link signs you in on this device.</p>
     <button class="btn btn-primary btn-block" id="auth-send">Send me a link</button>
+    <p class="auth-alt">No password, no confirmation step.<br>The link expires after one use.</p>
   </section>
 
   <!-- ===== PAYWALL ===== -->
   <section class="screen" id="screen-paywall">
     <button class="back" data-back="welcome">Back</button>
-    <p class="eyebrow">You've used your free breakdowns</p>
-    <h2>Keep reverse-engineering</h2>
+    <p class="eyebrow" id="paywall-eyebrow">Start your free trial</p>
+    <h2 id="paywall-title">Reverse-engineer without limits</h2>
     <p class="lede" id="paywall-lede">Unlimited breakdowns, unlimited scripts, and every analysis saved to your account.</p>
     <div class="panel price-panel">
       <div class="price-row"><span class="price-amount">$29</span><span class="price-per">/ month</span></div>

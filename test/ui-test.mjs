@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 const dir = path.resolve('public');
-const html = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(dir, 'app.html'), 'utf8');
 
 const FIXTURES = {
   '1': { title: "stop buying the apple pencil pro if you're just taking notes 😭 the usb-c one does everything #applepencil #studytok #ipadnotes", author_name: 'studywithmei' },

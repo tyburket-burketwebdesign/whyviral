@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WhyViral — reverse-engineer what made them blow up</title>
+<meta name="description" content="Paste 3 to 5 viral TikToks about one product. Get the pattern they share, then get scripts built on it.">
+<meta name="theme-color" content="#FFF7F2">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%238FD9F5'/><text x='50' y='68' font-size='54' font-family='system-ui,sans-serif' font-weight='700' text-anchor='middle' fill='%23141220'>w</text><circle cx='74' cy='62' r='7' fill='%23FF3D8B'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a href="/" class="brand" id="brand-home" aria-label="WhyViral home"><span class="brand-why">why</span>viral</a>
+  <div class="acct">
+    <span id="acct-state" hidden></span>
+    <button class="ghost-btn" id="nav-history" hidden>Past breakdowns</button>
+  </div>
+</header>
+
+<main id="app">
+
+  <!-- ===== WELCOME ===== -->
+  <section class="screen active" id="screen-welcome">
+    <div class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Reverse-engineer the winners</p>
+        <h1>Three videos went viral.<br>Find out what they <span class="l2">had in common.</span></h1>
+        <p class="lede">Paste 3 to 5 viral TikToks about one product. WhyViral reads their hooks, captions and hashtag structure, finds the traits they share that ordinary videos don't, and writes you scripts built on that pattern.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" id="go-new">Start a breakdown</button>
+          <button class="btn btn-quiet" id="go-history">See past breakdowns</button>
+        </div>
+        <p class="hero-note">No account. No card. Nothing to install.</p>
+      </div>
+
+      <div class="hero-art" aria-hidden="true">
+        <svg viewBox="0 0 460 430" fill="none" xmlns="http://www.w3.org/2000/svg" role="img">
+          <title>Three viral videos resolving into one shared pattern</title>
+
+          <g class="art-card art-card-1">
+            <rect x="14" y="52" width="118" height="196" rx="15" fill="#FFFFFF" stroke="#FF3D8B" stroke-width="1.5"/>
+            <rect x="28" y="70" width="66" height="7" rx="3.5" fill="#FF3D8B"/>
+            <rect x="28" y="85" width="88" height="6" rx="3" fill="#141220" opacity=".16"/>
+            <rect x="28" y="98" width="52" height="6" rx="3" fill="#141220" opacity=".16"/>
+            <circle cx="73" cy="158" r="26" fill="#FF3D8B" opacity=".1"/>
+            <path d="M66 148l18 10-18 10z" fill="#FF3D8B"/>
+            <rect x="28" y="212" width="44" height="6" rx="3" fill="#141220" opacity=".12"/>
+            <rect x="28" y="225" width="62" height="6" rx="3" fill="#141220" opacity=".12"/>
+          </g>
+
+          <g class="art-card art-card-2">
+            <rect x="164" y="26" width="126" height="210" rx="16" fill="#FFFFFF" stroke="#8FD9F5" stroke-width="1.5"/>
+            <rect x="180" y="46" width="74" height="7" rx="3.5" fill="#1B7FA8"/>
+            <rect x="180" y="62" width="94" height="6" rx="3" fill="#141220" opacity=".16"/>
+            <rect x="180" y="75" width="58" height="6" rx="3" fill="#141220" opacity=".16"/>
+            <circle cx="227" cy="140" r="28" fill="#8FD9F5" opacity=".22"/>
+            <path d="M219 129l19 11-19 11z" fill="#1B7FA8"/>
+            <rect x="180" y="198" width="50" height="6" rx="3" fill="#141220" opacity=".12"/>
+            <rect x="180" y="211" width="70" height="6" rx="3" fill="#141220" opacity=".12"/>
+          </g>
+
+          <g class="art-card art-card-3">
+            <rect x="322" y="52" width="118" height="196" rx="15" fill="#FFFFFF" stroke="#C9B8FF" stroke-width="1.5"/>
+            <rect x="336" y="70" width="60" height="7" rx="3.5" fill="#7A5CD6"/>
+            <rect x="336" y="85" width="86" height="6" rx="3" fill="#141220" opacity=".16"/>
+            <rect x="336" y="98" width="46" height="6" rx="3" fill="#141220" opacity=".16"/>
+            <circle cx="381" cy="158" r="26" fill="#C9B8FF" opacity=".26"/>
+            <path d="M374 148l18 10-18 10z" fill="#7A5CD6"/>
+            <rect x="336" y="212" width="56" height="6" rx="3" fill="#141220" opacity=".12"/>
+            <rect x="336" y="225" width="40" height="6" rx="3" fill="#141220" opacity=".12"/>
+          </g>
+
+          <g class="art-lines" stroke-dasharray="4 6" stroke-width="1.5" stroke-linecap="round" fill="none">
+            <path d="M73 258C73 300 150 300 205 318" stroke="#FF3D8B" opacity=".5"/>
+            <path d="M227 246C227 286 227 300 227 314" stroke="#1B7FA8" opacity=".5"/>
+            <path d="M381 258C381 300 304 300 249 318" stroke="#7A5CD6" opacity=".5"/>
+          </g>
+
+          <g class="art-node">
+            <rect x="96" y="322" width="262" height="86" rx="18" fill="#141220"/>
+            <circle cx="128" cy="352" r="9" fill="#FF3D8B"/>
+            <path d="M124 352l3 3.5 6-6.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <rect x="147" y="347" width="128" height="8" rx="4" fill="#FFFFFF" opacity=".92"/>
+            <text x="296" y="357" font-family="ui-monospace, monospace" font-size="13" fill="#FF3D8B">3/3</text>
+            <circle cx="128" cy="380" r="9" fill="#8FD9F5"/>
+            <path d="M124 380l3 3.5 6-6.5" stroke="#141220" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <rect x="147" y="375" width="96" height="8" rx="4" fill="#FFFFFF" opacity=".55"/>
+            <text x="296" y="385" font-family="ui-monospace, monospace" font-size="13" fill="#8FD9F5">3/3</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="proof-strip">
+      <div><span class="num">3–5</span><span class="lbl">videos in</span></div>
+      <div><span class="num">37</span><span class="lbl">traits checked</span></div>
+      <div><span class="num">1–6</span><span class="lbl">scripts out</span></div>
+    </div>
+  </section>
+
+  <!-- ===== NEW ANALYSIS ===== -->
+  <section class="screen" id="screen-input">
+    <button class="back" data-back="welcome">Back</button>
+    <h2>New breakdown</h2>
+    <label class="field">
+      <span class="field-label">What's the product or topic?</span>
+      <input type="text" id="topic" placeholder="Apple Pencil" autocomplete="off" spellcheck="false">
+      <span class="field-hint">Be specific. "Apple Pencil" works. "Tech" doesn't.</span>
+    </label>
+
+    <div class="links-head">
+      <span class="field-label">Viral video links</span>
+      <span class="count-pill" id="link-count">0 of 5</span>
+    </div>
+    <div id="link-rows"></div>
+    <button class="btn btn-quiet btn-sm" id="add-link">Add another link</button>
+
+    <details class="advanced">
+      <summary>Captions not loading? Paste them yourself</summary>
+      <p>WhyViral reads captions from TikTok's public embed endpoint. If a video is private, region-locked, or the endpoint is throttled, paste the caption and any on-screen text into the box under each link. Pasted text is analyzed exactly the same way — and including on-screen text actually makes the read sharper.</p>
+    </details>
+
+    <p class="error" id="input-error" hidden></p>
+    <button class="btn btn-primary btn-block" id="start-analysis">Start breakdown</button>
+  </section>
+
+  <!-- ===== LOADING ===== -->
+  <section class="screen" id="screen-loading">
+    <div class="loading-wrap">
+      <p class="eyebrow" id="loading-topic">Working</p>
+      <h2 id="loading-headline">Finding the pattern</h2>
+      <ol class="steps" id="steps"></ol>
+      <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
+      <p class="mono muted" id="eta">starting</p>
+    </div>
+  </section>
+
+  <!-- ===== BREAKDOWN ===== -->
+  <section class="screen" id="screen-result">
+    <button class="back" data-back="welcome">Back</button>
+    <div class="result-head">
+      <p class="eyebrow" id="result-topic"></p>
+      <h2>They went viral because</h2>
+      <div class="confidence" id="confidence"></div>
+    </div>
+
+    <div class="result-grid">
+      <div class="result-main">
+        <div class="baseline" id="baseline" hidden></div>
+        <div id="findings" class="findings-col"></div>
+        <div id="no-findings" hidden class="empty">
+          <h3>Not enough shared signal</h3>
+          <p>These videos don't have much in common at the caption level, which usually means one of two things: the videos are genuinely different in approach, or the captions came back thin. Try pasting the captions and on-screen text manually, or swap in videos that are closer to each other in format.</p>
+          <button class="btn btn-quiet btn-sm" data-back="input">Edit the links</button>
+        </div>
+      </div>
+
+      <aside class="result-side">
+        <div class="panel" id="metrics-panel" hidden></div>
+        <div class="panel" id="audience-panel" hidden></div>
+        <div class="panel" id="shared-panel"></div>
+        <div class="script-cta">
+          <div class="stepper">
+            <button class="step-btn" id="dec" aria-label="Fewer scripts">–</button>
+            <div class="step-val"><span class="mono" id="script-n">3</span><span class="step-lbl">scripts</span></div>
+            <button class="step-btn" id="inc" aria-label="More scripts">+</button>
+          </div>
+          <button class="btn btn-primary btn-block" id="build-scripts">Build my scripts</button>
+        </div>
+      </aside>
+    </div>
+
+    <p class="caveat" id="caveat"></p>
+  </section>
+
+  <!-- ===== SCRIPTS ===== -->
+  <section class="screen" id="screen-scripts">
+    <button class="back" data-back="result">Back to breakdown</button>
+    <h2 id="scripts-title">Your scripts</h2>
+    <p class="lede sm">Each one uses the pattern above through a different angle, so you can post several without repeating yourself.</p>
+    <div id="scripts"></div>
+  </section>
+
+  <!-- ===== SIGN IN ===== -->
+  <section class="screen" id="screen-auth">
+    <button class="back" data-back="welcome">Back</button>
+    <h2 id="auth-title">Save your breakdowns</h2>
+    <p class="lede sm" id="auth-lede">Enter your email and we'll send you a 6-digit code. No password to remember.</p>
+    <label class="field">
+      <span class="field-label">Email</span>
+      <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email" inputmode="email">
+    </label>
+    <p class="error" id="auth-error" hidden></p>
+    <button class="btn btn-primary btn-block" id="auth-send">Send me a code</button>
+
+    <div id="auth-step2" hidden>
+      <p class="auth-sent" id="auth-sent">Check your inbox. Enter the 6-digit code below.</p>
+      <label class="field">
+        <span class="field-label">6-digit code</span>
+        <input type="text" id="auth-code" inputmode="numeric" autocomplete="one-time-code"
+               maxlength="6" placeholder="123456" class="code-input">
+      </label>
+      <button class="btn btn-primary btn-block" id="auth-verify">Sign in</button>
+      <button class="btn btn-quiet btn-block btn-sm" id="auth-resend">Send a new code</button>
+    </div>
+
+    <p class="auth-alt">No password. If the emailed link says expired, use the code —
+    email scanners often open links before you do.</p>
+  </section>
+
+  <!-- ===== PAYWALL ===== -->
+  <section class="screen" id="screen-paywall">
+    <button class="back" data-back="welcome">Back</button>
+    <p class="eyebrow" id="paywall-eyebrow">Start your free trial</p>
+    <h2 id="paywall-title">Reverse-engineer without limits</h2>
+    <p class="lede" id="paywall-lede">Unlimited breakdowns, unlimited scripts, and every analysis saved to your account.</p>
+    <div class="panel price-panel">
+      <div class="price-row"><span class="price-amount">$29</span><span class="price-per">/ month</span></div>
+      <ul class="price-list">
+        <li>Unlimited breakdowns</li>
+        <li>Up to 6 scripts per breakdown</li>
+        <li>Measured comparison against real underperformers</li>
+        <li>Comment mining and audience objections</li>
+        <li>Every analysis saved and searchable</li>
+      </ul>
+    </div>
+    <p class="error" id="paywall-error" hidden></p>
+    <div class="plan-toggle" id="plan-toggle">
+      <button class="plan-opt active" data-plan="monthly">$29 / month</button>
+      <button class="plan-opt" data-plan="annual">$290 / year<span class="plan-save">2 months free</span></button>
+    </div>
+    <button class="btn btn-primary btn-block" id="paywall-go">Start free trial</button>
+    <button class="btn btn-quiet btn-block" id="paywall-manage" hidden>Manage billing</button>
+  </section>
+
+  <!-- ===== HISTORY ===== -->
+  <section class="screen" id="screen-history">
+    <button class="back" data-back="welcome">Back</button>
+    <h2>Past breakdowns</h2>
+    <div id="history-list"></div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- Classic scripts, loaded in dependency order. Deliberately NOT type="module":
+     modules are blocked by CORS on file://, which makes the page silently dead
+     when someone just double-clicks index.html. -->
+<script>
+  /* Publishable values only. The anon key is designed to be public; the
+     service key and JWT secret live server-side and never appear here.
+     Leave blank to run the app with no accounts and no paywall. */
+  window.WHYVIRAL_CONFIG = {
+    supabaseUrl: "https://paylvdfhhkrddlwimofk.supabase.co",
+    supabaseAnonKey: "sb_publishable_CfV9o2KRZW3Vr0NnFBL_Ig_CiqC6Hfm"
+  };
+</script>
+<script src="auth.js"></script>
+<script src="comments.js"></script>
+<script src="engine.js"></script>
+<script src="scriptgen.js"></script>
+<script src="app.js"></script>
+<script>
+  /* If the scripts failed to load, say so instead of leaving dead buttons. */
+  setTimeout(function () {
+    if (window.__wfReady) return;
+    var b = document.createElement('div');
+    b.className = 'boot-error';
+    b.innerHTML = "<strong>The app scripts didn't load.</strong> If you opened this file directly, "
+      + "run a local server from this folder instead \u2014 <code>npx serve</code> or "
+      + "<code>python3 -m http.server</code> \u2014 then open the address it prints.";
+    document.body.insertBefore(b, document.body.firstChild);
+  }, 1200);
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 const dir = path.resolve('public');
-const dom = new JSDOM(fs.readFileSync(path.join(dir, 'index.html'), 'utf8'), {
+const dom = new JSDOM(fs.readFileSync(path.join(dir, 'app.html'), 'utf8'), {
   runScripts: 'outside-only', url: 'https://whyviral.pages.dev/', pretendToBeVisual: true,
 });
 const { window } = dom;

@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 const dir = path.resolve('public');
 /* The exact fragment from the failed magic link. */
-const dom = new JSDOM(fs.readFileSync(path.join(dir, 'index.html'), 'utf8'), {
+const dom = new JSDOM(fs.readFileSync(path.join(dir, 'app.html'), 'utf8'), {
   runScripts: 'outside-only', pretendToBeVisual: true,
   url: 'https://whyviral.io/#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired',
 });

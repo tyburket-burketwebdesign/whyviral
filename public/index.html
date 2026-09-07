@@ -4,279 +4,303 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>WhyViral — reverse-engineer what made them blow up</title>
-<meta name="description" content="Paste 3 to 5 viral TikToks about one product. Get the pattern they share, then get scripts built on it.">
+<meta name="description" content="Paste 3 to 5 viral TikToks about one product. WhyViral measures what they share that ordinary videos don't, then writes scripts built on that pattern.">
 <meta name="theme-color" content="#FFF7F2">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%238FD9F5'/><text x='50' y='68' font-size='54' font-family='system-ui,sans-serif' font-weight='700' text-anchor='middle' fill='%23141220'>w</text><circle cx='74' cy='62' r='7' fill='%23FF3D8B'/></svg>">
+<meta property="og:title" content="WhyViral — reverse-engineer what made them blow up">
+<meta property="og:description" content="Paste 3 to 5 viral TikToks. Get the measured pattern, then scripts built on it.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://whyviral.io">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23141220'/><text x='44' y='66' font-size='44' font-family='system-ui,sans-serif' font-weight='700' text-anchor='middle' fill='white'>w</text><circle cx='74' cy='60' r='7' fill='%23FF3D8B'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="site.css">
 </head>
 <body>
 
-<header class="topbar">
-  <button class="brand" id="brand-home" aria-label="WhyViral home"><span class="brand-why">why</span>viral</button>
-  <div class="acct">
-    <span id="acct-state" hidden></span>
-    <button class="ghost-btn" id="nav-history" hidden>Past breakdowns</button>
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a href="/" class="logo"><span>why</span>viral</a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#method">The method</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <div class="nav-cta">
+      <a href="/app.html" class="nav-signin">Sign in</a>
+      <a href="#pricing" class="btn btn-primary">Start free</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">Reverse-engineer the winners</p>
+      <h1>Stop guessing why their video worked.</h1>
+      <p class="lede">Paste 3 to 5 viral TikToks about one product. WhyViral reads the hooks, the spoken audio, the comments and the engagement — then measures what those videos share that ordinary videos on the same hashtag <em>don't</em>. You get the pattern, then scripts built on it.</p>
+      <div class="hero-actions">
+        <a href="#pricing" class="btn btn-primary btn-lg">Start your 7-day trial</a>
+        <a href="#how" class="btn btn-ghost btn-lg">See how it works</a>
+      </div>
+      <p class="hero-note"><b>Cancel any time.</b> Analysis takes about 40 seconds.</p>
+    </div>
+
+    <div class="frame" aria-hidden="true">
+      <div class="frame-bar"><i></i><i></i><i></i></div>
+      <p class="eyebrow" style="margin-bottom:10px">Apple Pencil · 3 videos</p>
+      <div class="fake-find">
+        <div class="t"><h4>Opens by telling you to stop</h4><span class="c">3 of 3</span></div>
+        <p>Telling someone to stop implies they're already doing it wrong. That stings enough to hold attention.</p>
+        <span class="fake-lift">4.2× more common than in ordinary videos</span>
+      </div>
+      <div class="fake-find">
+        <div class="t"><h4>Framed around a problem, not a feature</h4><span class="c">3 of 3</span></div>
+        <p>Pain is more legible than benefit, so the viewer qualifies themselves in.</p>
+        <span class="fake-lift">3.1× more common than in ordinary videos</span>
+      </div>
+      <div class="fake-find b">
+        <div class="t"><h4>Price held to the last three seconds</h4><span class="c">2 of 3</span></div>
+        <p>Delaying the number keeps the objection from arriving before the proof does.</p>
+        <span class="fake-lift">2.4× more common than in ordinary videos</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="proof">
+      <div><span class="n">37</span><span class="l">traits measured per video</span></div>
+      <div><span class="n">~40s</span><span class="l">from paste to breakdown</span></div>
+      <div><span class="n">6</span><span class="l">ready-to-shoot scripts</span></div>
+    </div>
   </div>
 </header>
 
-<main id="app">
-
-  <!-- ===== WELCOME ===== -->
-  <section class="screen active" id="screen-welcome">
-    <div class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">Reverse-engineer the winners</p>
-        <h1>Three videos went viral.<br>Find out what they <span class="l2">had in common.</span></h1>
-        <p class="lede">Paste 3 to 5 viral TikToks about one product. WhyViral reads their hooks, captions and hashtag structure, finds the traits they share that ordinary videos don't, and writes you scripts built on that pattern.</p>
-        <div class="hero-actions">
-          <button class="btn btn-primary" id="go-new">Start a breakdown</button>
-          <button class="btn btn-quiet" id="go-history">See past breakdowns</button>
-        </div>
-        <p class="hero-note">No account. No card. Nothing to install.</p>
+<!-- ============ HOW ============ -->
+<section class="section" id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">How it works</p>
+      <h2>Three steps. About forty seconds.</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <h3>Paste the winners</h3>
+        <p>Find 3 to 5 viral videos about one specific product — an Apple Pencil, a Stanley cup, a creatine brand. Paste the links and name the product.</p>
       </div>
-
-      <div class="hero-art" aria-hidden="true">
-        <svg viewBox="0 0 460 430" fill="none" xmlns="http://www.w3.org/2000/svg" role="img">
-          <title>Three viral videos resolving into one shared pattern</title>
-
-          <g class="art-card art-card-1">
-            <rect x="14" y="52" width="118" height="196" rx="15" fill="#FFFFFF" stroke="#FF3D8B" stroke-width="1.5"/>
-            <rect x="28" y="70" width="66" height="7" rx="3.5" fill="#FF3D8B"/>
-            <rect x="28" y="85" width="88" height="6" rx="3" fill="#141220" opacity=".16"/>
-            <rect x="28" y="98" width="52" height="6" rx="3" fill="#141220" opacity=".16"/>
-            <circle cx="73" cy="158" r="26" fill="#FF3D8B" opacity=".1"/>
-            <path d="M66 148l18 10-18 10z" fill="#FF3D8B"/>
-            <rect x="28" y="212" width="44" height="6" rx="3" fill="#141220" opacity=".12"/>
-            <rect x="28" y="225" width="62" height="6" rx="3" fill="#141220" opacity=".12"/>
-          </g>
-
-          <g class="art-card art-card-2">
-            <rect x="164" y="26" width="126" height="210" rx="16" fill="#FFFFFF" stroke="#8FD9F5" stroke-width="1.5"/>
-            <rect x="180" y="46" width="74" height="7" rx="3.5" fill="#1B7FA8"/>
-            <rect x="180" y="62" width="94" height="6" rx="3" fill="#141220" opacity=".16"/>
-            <rect x="180" y="75" width="58" height="6" rx="3" fill="#141220" opacity=".16"/>
-            <circle cx="227" cy="140" r="28" fill="#8FD9F5" opacity=".22"/>
-            <path d="M219 129l19 11-19 11z" fill="#1B7FA8"/>
-            <rect x="180" y="198" width="50" height="6" rx="3" fill="#141220" opacity=".12"/>
-            <rect x="180" y="211" width="70" height="6" rx="3" fill="#141220" opacity=".12"/>
-          </g>
-
-          <g class="art-card art-card-3">
-            <rect x="322" y="52" width="118" height="196" rx="15" fill="#FFFFFF" stroke="#C9B8FF" stroke-width="1.5"/>
-            <rect x="336" y="70" width="60" height="7" rx="3.5" fill="#7A5CD6"/>
-            <rect x="336" y="85" width="86" height="6" rx="3" fill="#141220" opacity=".16"/>
-            <rect x="336" y="98" width="46" height="6" rx="3" fill="#141220" opacity=".16"/>
-            <circle cx="381" cy="158" r="26" fill="#C9B8FF" opacity=".26"/>
-            <path d="M374 148l18 10-18 10z" fill="#7A5CD6"/>
-            <rect x="336" y="212" width="56" height="6" rx="3" fill="#141220" opacity=".12"/>
-            <rect x="336" y="225" width="40" height="6" rx="3" fill="#141220" opacity=".12"/>
-          </g>
-
-          <g class="art-lines" stroke-dasharray="4 6" stroke-width="1.5" stroke-linecap="round" fill="none">
-            <path d="M73 258C73 300 150 300 205 318" stroke="#FF3D8B" opacity=".5"/>
-            <path d="M227 246C227 286 227 300 227 314" stroke="#1B7FA8" opacity=".5"/>
-            <path d="M381 258C381 300 304 300 249 318" stroke="#7A5CD6" opacity=".5"/>
-          </g>
-
-          <g class="art-node">
-            <rect x="96" y="322" width="262" height="86" rx="18" fill="#141220"/>
-            <circle cx="128" cy="352" r="9" fill="#FF3D8B"/>
-            <path d="M124 352l3 3.5 6-6.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-            <rect x="147" y="347" width="128" height="8" rx="4" fill="#FFFFFF" opacity=".92"/>
-            <text x="296" y="357" font-family="ui-monospace, monospace" font-size="13" fill="#FF3D8B">3/3</text>
-            <circle cx="128" cy="380" r="9" fill="#8FD9F5"/>
-            <path d="M124 380l3 3.5 6-6.5" stroke="#141220" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-            <rect x="147" y="375" width="96" height="8" rx="4" fill="#FFFFFF" opacity=".55"/>
-            <text x="296" y="385" font-family="ui-monospace, monospace" font-size="13" fill="#8FD9F5">3/3</text>
-          </g>
-        </svg>
+      <div class="step">
+        <h3>We measure the difference</h3>
+        <p>WhyViral pulls captions, spoken transcripts, engagement rates and comments, then compares them against ordinary videos on the same hashtag to find what's actually distinctive.</p>
+      </div>
+      <div class="step">
+        <h3>Shoot from the script</h3>
+        <p>Get up to six scripts across different angles, each with per-beat timings, shot directions, caption, hashtags and the lines you have to say.</p>
       </div>
     </div>
+  </div>
+</section>
 
-    <div class="proof-strip">
-      <div><span class="num">3–5</span><span class="lbl">videos in</span></div>
-      <div><span class="num">37</span><span class="lbl">traits checked</span></div>
-      <div><span class="num">1–6</span><span class="lbl">scripts out</span></div>
+<!-- ============ METHOD ============ -->
+<section class="section dark" id="method">
+  <div class="wrap contrast">
+    <div>
+      <p class="eyebrow">The method</p>
+      <h2>Most tools tell you viral videos use hooks.</h2>
+      <p class="lede" style="margin-top:16px">So do the ten thousand videos that got 400 views. A pattern only means something if ordinary videos <em>don't</em> share it — so we go and measure them.</p>
     </div>
-  </section>
-
-  <!-- ===== NEW ANALYSIS ===== -->
-  <section class="screen" id="screen-input">
-    <button class="back" data-back="welcome">Back</button>
-    <h2>New breakdown</h2>
-    <label class="field">
-      <span class="field-label">What's the product or topic?</span>
-      <input type="text" id="topic" placeholder="Apple Pencil" autocomplete="off" spellcheck="false">
-      <span class="field-hint">Be specific. "Apple Pencil" works. "Tech" doesn't.</span>
-    </label>
-
-    <div class="links-head">
-      <span class="field-label">Viral video links</span>
-      <span class="count-pill" id="link-count">0 of 5</span>
+    <div class="vs">
+      <div class="vs-row">
+        <div class="k">What other tools do</div>
+        <p>Read three viral videos, list what they have in common, and call it insight. Everything they find is also true of videos that flopped.</p>
+      </div>
+      <div class="vs-row good">
+        <div class="k">What WhyViral does</div>
+        <p>Pull up to 50 ordinary videos from the same hashtag, keep the low performers, and count how often each trait appears there. "4.2× more common" is a measurement, not an opinion.</p>
+      </div>
     </div>
-    <div id="link-rows"></div>
-    <button class="btn btn-quiet btn-sm" id="add-link">Add another link</button>
+  </div>
+</section>
 
-    <details class="advanced">
-      <summary>Captions not loading? Paste them yourself</summary>
-      <p>WhyViral reads captions from TikTok's public embed endpoint. If a video is private, region-locked, or the endpoint is throttled, paste the caption and any on-screen text into the box under each link. Pasted text is analyzed exactly the same way — and including on-screen text actually makes the read sharper.</p>
-    </details>
-
-    <p class="error" id="input-error" hidden></p>
-    <button class="btn btn-primary btn-block" id="start-analysis">Start breakdown</button>
-  </section>
-
-  <!-- ===== LOADING ===== -->
-  <section class="screen" id="screen-loading">
-    <div class="loading-wrap">
-      <p class="eyebrow" id="loading-topic">Working</p>
-      <h2 id="loading-headline">Finding the pattern</h2>
-      <ol class="steps" id="steps"></ol>
-      <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
-      <p class="mono muted" id="eta">starting</p>
+<!-- ============ FEATURES ============ -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What's inside</p>
+      <h2>Built to answer why, not just what.</h2>
     </div>
-  </section>
+    <div class="feat-grid">
+      <div class="feat">
+        <div class="k">Measured baseline</div>
+        <h3>Real comparison group</h3>
+        <p>Every analysis pulls ordinary videos from the same hashtag and counts trait rates there. Findings are labelled measured or estimated, so you always know which number to trust.</p>
+      </div>
+      <div class="feat">
+        <div class="k">Spoken hook</div>
+        <h3>Reads the audio, not just the caption</h3>
+        <p>The hook is what viewers hear in the first two seconds, and it's frequently unrelated to the caption. WhyViral transcribes it and classifies it across eleven patterns.</p>
+      </div>
+      <div class="feat">
+        <div class="k">Comment mining</div>
+        <h3>What the audience actually said</h3>
+        <p>Buying intent, price objections, doubt, compatibility questions. The objection that repeats across the set gets written into every script as its own beat.</p>
+      </div>
+      <div class="feat">
+        <div class="k">Engagement math</div>
+        <h3>Share and save rate, not likes</h3>
+        <p>Shares push a video into new networks and saves signal intent. You see how far the winners outperformed the ordinary videos on both.</p>
+      </div>
+      <div class="feat">
+        <div class="k">Scripts</div>
+        <h3>Shootable, not generic</h3>
+        <p>Per-beat timings, shot directions, energy notes, caption, hashtags and must-say lines. Up to six angles so you can post a week without repeating yourself.</p>
+      </div>
+      <div class="feat">
+        <div class="k">Saved history</div>
+        <h3>Every breakdown, kept</h3>
+        <p>Analyses save to your account and follow you across devices, so a product you researched in March is still there in June.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <!-- ===== BREAKDOWN ===== -->
-  <section class="screen" id="screen-result">
-    <button class="back" data-back="welcome">Back</button>
-    <div class="result-head">
-      <p class="eyebrow" id="result-topic"></p>
-      <h2>They went viral because</h2>
-      <div class="confidence" id="confidence"></div>
+<!-- ============ PRICING ============ -->
+<section class="section" id="pricing">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Pricing</p>
+      <h2>One plan. Seven days to decide.</h2>
+      <p class="lede" style="margin-top:14px">Full access during the trial — nothing is held back. Cancel in two clicks from your account.</p>
     </div>
 
-    <div class="result-grid">
-      <div class="result-main">
-        <div class="baseline" id="baseline" hidden></div>
-        <div id="findings" class="findings-col"></div>
-        <div id="no-findings" hidden class="empty">
-          <h3>Not enough shared signal</h3>
-          <p>These videos don't have much in common at the caption level, which usually means one of two things: the videos are genuinely different in approach, or the captions came back thin. Try pasting the captions and on-screen text manually, or swap in videos that are closer to each other in format.</p>
-          <button class="btn btn-quiet btn-sm" data-back="input">Edit the links</button>
-        </div>
+    <div class="toggle" role="group" aria-label="Billing period">
+      <button id="t-month" class="on" type="button">Monthly</button>
+      <button id="t-year" type="button">Yearly<span class="save">2 months free</span></button>
+    </div>
+
+    <div class="plans">
+      <div class="plan">
+        <h3>Free trial</h3>
+        <p class="sub">Everything in Pro, for seven days.</p>
+        <div class="price"><span class="amt">$0</span><span class="per">for 7 days</span></div>
+        <p class="price-note">Card required. Cancel before day 7 and you're not charged.</p>
+        <a href="/app.html" class="btn btn-ghost btn-block">Start free trial</a>
+        <ul class="plan-list">
+          <li>Unlimited breakdowns</li>
+          <li>Up to 6 scripts per breakdown</li>
+          <li>Measured comparison baseline</li>
+          <li>Comment mining</li>
+          <li>Cancel any time, no email required</li>
+        </ul>
       </div>
 
-      <aside class="result-side">
-        <div class="panel" id="metrics-panel" hidden></div>
-        <div class="panel" id="audience-panel" hidden></div>
-        <div class="panel" id="shared-panel"></div>
-        <div class="script-cta">
-          <div class="stepper">
-            <button class="step-btn" id="dec" aria-label="Fewer scripts">–</button>
-            <div class="step-val"><span class="mono" id="script-n">3</span><span class="step-lbl">scripts</span></div>
-            <button class="step-btn" id="inc" aria-label="More scripts">+</button>
-          </div>
-          <button class="btn btn-primary btn-block" id="build-scripts">Build my scripts</button>
-        </div>
-      </aside>
+      <div class="plan hero-plan">
+        <span class="plan-tag">Pro</span>
+        <h3>WhyViral Pro</h3>
+        <p class="sub">For creators posting product content every week.</p>
+        <div class="price"><span class="amt" id="price-amt">$29</span><span class="per" id="price-per">/ month</span></div>
+        <p class="price-note" id="price-note">Billed monthly. Cancel any time.</p>
+        <a href="/app.html" class="btn btn-primary btn-block">Start your 7-day trial</a>
+        <ul class="plan-list">
+          <li>Unlimited breakdowns and scripts</li>
+          <li>Measured baseline against real underperformers</li>
+          <li>Spoken transcript and hook classification</li>
+          <li>Comment mining and audience objections</li>
+          <li>Share and save rate benchmarking</li>
+          <li>Full breakdown history, synced across devices</li>
+          <li>Priority email support</li>
+        </ul>
+      </div>
     </div>
+  </div>
+</section>
 
-    <p class="caveat" id="caveat"></p>
-  </section>
-
-  <!-- ===== SCRIPTS ===== -->
-  <section class="screen" id="screen-scripts">
-    <button class="back" data-back="result">Back to breakdown</button>
-    <h2 id="scripts-title">Your scripts</h2>
-    <p class="lede sm">Each one uses the pattern above through a different angle, so you can post several without repeating yourself.</p>
-    <div id="scripts"></div>
-  </section>
-
-  <!-- ===== SIGN IN ===== -->
-  <section class="screen" id="screen-auth">
-    <button class="back" data-back="welcome">Back</button>
-    <h2 id="auth-title">Save your breakdowns</h2>
-    <p class="lede sm" id="auth-lede">Enter your email and we'll send you a 6-digit code. No password to remember.</p>
-    <label class="field">
-      <span class="field-label">Email</span>
-      <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email" inputmode="email">
-    </label>
-    <p class="error" id="auth-error" hidden></p>
-    <button class="btn btn-primary btn-block" id="auth-send">Send me a code</button>
-
-    <div id="auth-step2" hidden>
-      <p class="auth-sent" id="auth-sent">Check your inbox. Enter the 6-digit code below.</p>
-      <label class="field">
-        <span class="field-label">6-digit code</span>
-        <input type="text" id="auth-code" inputmode="numeric" autocomplete="one-time-code"
-               maxlength="6" placeholder="123456" class="code-input">
-      </label>
-      <button class="btn btn-primary btn-block" id="auth-verify">Sign in</button>
-      <button class="btn btn-quiet btn-block btn-sm" id="auth-resend">Send a new code</button>
+<!-- ============ FOUNDER ============ -->
+<section class="section" style="background:var(--paper);border-top:1px solid var(--line-2);border-bottom:1px solid var(--line-2)">
+  <div class="wrap founder">
+    <div class="avatar" aria-hidden="true">C</div>
+    <div>
+      <blockquote>“I was already studying the videos that beat mine. This just does it properly.”</blockquote>
+      <p class="who"><b>Charley</b> — founder, WhyViral. Creator, 11K on TikTok.</p>
     </div>
+  </div>
+</section>
 
-    <p class="auth-alt">No password. If the emailed link says expired, use the code —
-    email scanners often open links before you do.</p>
-  </section>
-
-  <!-- ===== PAYWALL ===== -->
-  <section class="screen" id="screen-paywall">
-    <button class="back" data-back="welcome">Back</button>
-    <p class="eyebrow" id="paywall-eyebrow">Start your free trial</p>
-    <h2 id="paywall-title">Reverse-engineer without limits</h2>
-    <p class="lede" id="paywall-lede">Unlimited breakdowns, unlimited scripts, and every analysis saved to your account.</p>
-    <div class="panel price-panel">
-      <div class="price-row"><span class="price-amount">$29</span><span class="price-per">/ month</span></div>
-      <ul class="price-list">
-        <li>Unlimited breakdowns</li>
-        <li>Up to 6 scripts per breakdown</li>
-        <li>Measured comparison against real underperformers</li>
-        <li>Comment mining and audience objections</li>
-        <li>Every analysis saved and searchable</li>
-      </ul>
+<!-- ============ FAQ ============ -->
+<section class="section" id="faq">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Questions</p>
+      <h2>The things people ask first.</h2>
     </div>
-    <p class="error" id="paywall-error" hidden></p>
-    <div class="plan-toggle" id="plan-toggle">
-      <button class="plan-opt active" data-plan="monthly">$29 / month</button>
-      <button class="plan-opt" data-plan="annual">$290 / year<span class="plan-save">2 months free</span></button>
+    <div class="faq">
+      <details open>
+        <summary>Does it actually watch the video?</summary>
+        <p>It reads the spoken audio, the caption, hashtags, duration, sound type and engagement, plus up to 30 comments per video. It does not yet read on-screen text overlays — that's the one gap, and the app says so on every result rather than hiding it.</p>
+      </details>
+      <details>
+        <summary>What makes this different from an AI script generator?</summary>
+        <p>Those start from a prompt. WhyViral starts from proof: videos that already worked, compared against videos that didn't. The comparison is arithmetic, not a language model guessing at patterns.</p>
+      </details>
+      <details>
+        <summary>How many videos do I need?</summary>
+        <p>Three minimum, five is better. They should be about the same specific product — "Apple Pencil" works, "tech" doesn't. The tighter the set, the sharper the pattern.</p>
+      </details>
+      <details>
+        <summary>What if the videos don't have much in common?</summary>
+        <p>You'll be told that instead of being handed invented findings. A weak result is a real answer: those videos probably worked for different reasons.</p>
+      </details>
+      <details>
+        <summary>Can I cancel?</summary>
+        <p>Two clicks from your account, any time, no email required. Cancel during the trial and you're never charged.</p>
+      </details>
+      <details>
+        <summary>Does it work outside TikTok?</summary>
+        <p>Not yet. TikTok only, deliberately — the trait model is tuned to how that feed behaves. Reels and Shorts are on the roadmap.</p>
+      </details>
     </div>
-    <button class="btn btn-primary btn-block" id="paywall-go">Start free trial</button>
-    <button class="btn btn-quiet btn-block" id="paywall-manage" hidden>Manage billing</button>
-  </section>
+  </div>
+</section>
 
-  <!-- ===== HISTORY ===== -->
-  <section class="screen" id="screen-history">
-    <button class="back" data-back="welcome">Back</button>
-    <h2>Past breakdowns</h2>
-    <div id="history-list"></div>
-  </section>
+<!-- ============ CTA ============ -->
+<section class="cta-band dark">
+  <div class="wrap">
+    <h2>Your next video already has a blueprint.</h2>
+    <p class="lede">Somebody has already made a video about your product that worked. Find out exactly what they did.</p>
+    <a href="/app.html" class="btn btn-primary btn-lg">Start your 7-day trial</a>
+  </div>
+</section>
 
-</main>
+<footer class="foot">
+  <div class="wrap foot-grid">
+    <span>© <span id="yr">2026</span> WhyViral</span>
+    <div class="foot-links">
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="/terms.html">Terms</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="mailto:support@whyviral.io">Support</a>
+    </div>
+  </div>
+</footer>
 
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-<!-- Classic scripts, loaded in dependency order. Deliberately NOT type="module":
-     modules are blocked by CORS on file://, which makes the page silently dead
-     when someone just double-clicks index.html. -->
 <script>
-  /* Publishable values only. The anon key is designed to be public; the
-     service key and JWT secret live server-side and never appear here.
-     Leave blank to run the app with no accounts and no paywall. */
-  window.WHYVIRAL_CONFIG = {
-    supabaseUrl: "https://paylvdfhhkrddlwimofk.supabase.co",
-    supabaseAnonKey: "sb_publishable_CfV9o2KRZW3Vr0NnFBL_Ig_CiqC6Hfm"
-  };
-</script>
-<script src="auth.js"></script>
-<script src="comments.js"></script>
-<script src="engine.js"></script>
-<script src="scriptgen.js"></script>
-<script src="app.js"></script>
-<script>
-  /* If the scripts failed to load, say so instead of leaving dead buttons. */
-  setTimeout(function () {
-    if (window.__wfReady) return;
-    var b = document.createElement('div');
-    b.className = 'boot-error';
-    b.innerHTML = "<strong>The app scripts didn't load.</strong> If you opened this file directly, "
-      + "run a local server from this folder instead \u2014 <code>npx serve</code> or "
-      + "<code>python3 -m http.server</code> \u2014 then open the address it prints.";
-    document.body.insertBefore(b, document.body.firstChild);
-  }, 1200);
+  document.getElementById('yr').textContent = new Date().getFullYear();
+
+  /* Billing toggle. Monthly is the default because it's the lower-commitment
+     entry; yearly is the upsell, not the anchor. */
+  var m = document.getElementById('t-month'), y = document.getElementById('t-year');
+  var amt = document.getElementById('price-amt'), per = document.getElementById('price-per'), note = document.getElementById('price-note');
+  function setPlan(annual) {
+    m.classList.toggle('on', !annual);
+    y.classList.toggle('on', annual);
+    amt.textContent = annual ? '$290' : '$29';
+    per.textContent = annual ? '/ year' : '/ month';
+    note.textContent = annual ? 'Billed yearly — two months free. Cancel any time.' : 'Billed monthly. Cancel any time.';
+  }
+  m.addEventListener('click', function () { setPlan(false); });
+  y.addEventListener('click', function () { setPlan(true); });
 </script>
 </body>
 </html>

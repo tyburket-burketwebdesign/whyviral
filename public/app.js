@@ -16,7 +16,8 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-back]');
   if (b) show(b.dataset.back);
 });
-$('#brand-home').onclick = () => show('welcome');
+const brandEl = $('#brand-home');
+if (brandEl && brandEl.tagName === 'BUTTON') brandEl.onclick = () => show('welcome');
 $('#go-new').onclick = () => show('input');
 $('#go-history').onclick = () => { renderHistory(); show('history'); };
 $('#nav-history').onclick = () => { renderHistory(); show('history'); };

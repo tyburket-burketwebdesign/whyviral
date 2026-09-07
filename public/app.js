@@ -493,6 +493,12 @@ async function refreshAccount() {
     bar.appendChild(el('span', 'trial-pill', `${s.remaining} free left`));
   }
   try { renderPaywall(null, s); } catch {}
+  const note = $('#hero-note');
+  if (note) {
+    note.textContent = s.subscribed ? 'You have full access. Paste your links below.'
+      : (s.trialMode === 'card' ? `${s.trialDays || 7} days free, then $29 a month. Cancel any time.`
+                                : 'No account needed for your first breakdown.');
+  }
   const btn = el('button', 'ghost-btn', s.signedIn ? 'Sign out' : 'Sign in');
   btn.onclick = async () => {
     if (s.signedIn) { WV_AUTH.signOut(); WV_AUTH.invalidate(); await refreshAccount(); show('welcome'); }
@@ -582,7 +588,24 @@ if (payGo) payGo.onclick = async () => {
   }
 };
 
+/* The marketing site links straight to a screen, so honour the hash.
+   Read it before captureRedirect(), which clears the fragment. */
+function routeFromHash() {
+  const h = (location.hash || '').replace('#', '').toLowerCase();
+  if (h === 'signin' || h === 'signup') {
+    if (h === 'signup') {
+      $('#auth-title').textContent = 'Create your account';
+      $('#auth-lede').textContent = "Enter your email and we'll send you a 6-digit code. No password to remember.";
+    }
+    history.replaceState(null, '', location.pathname);
+    return 'auth';
+  }
+  if (h === 'pricing' || h === 'upgrade') { history.replaceState(null, '', location.pathname); return 'paywall'; }
+  return null;
+}
+
 (async function bootAccount() {
+  const deepLink = routeFromHash();
   const result = WV_AUTH.captureRedirect();
   if (result === 'signed-in') {
     WV_AUTH.invalidate();
@@ -593,5 +616,10 @@ if (payGo) payGo.onclick = async () => {
     show('auth');
     showAuthError(result);
   }
-  await refreshAccount();
+  const acct = await refreshAccount();
+  /* An expired-link message outranks a deep link; otherwise honour it. */
+  if (deepLink && !(typeof result === 'string' && result)) {
+    if (deepLink === 'paywall') renderPaywall(null, acct);
+    show(deepLink);
+  }
 })();

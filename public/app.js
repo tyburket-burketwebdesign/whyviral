@@ -502,79 +502,116 @@ async function refreshAccount() {
   const btn = el('button', 'ghost-btn', s.signedIn ? 'Sign out' : 'Sign in');
   btn.onclick = async () => {
     if (s.signedIn) { WV_AUTH.signOut(); WV_AUTH.invalidate(); await refreshAccount(); show('welcome'); }
-    else show('auth');
+    else show('signup');
   };
   bar.appendChild(btn);
   return s;
 }
 
-let authEmail = '';
-const sendBtn = $('#auth-send');
-const showAuthError = m => { const e = $('#auth-error'); e.textContent = m; e.hidden = false; };
+const showErr = (sel, m) => { const e = $(sel); e.textContent = m; e.hidden = false; };
 
-async function requestCode() {
-  const email = ($('#auth-email').value || '').trim();
-  $('#auth-error').hidden = true;
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { showAuthError('That email does not look right.'); return; }
-  authEmail = email;
-  sendBtn.disabled = true;
-  const original = sendBtn.textContent;
-  sendBtn.textContent = 'Sending…';
-  try {
-    await WV_AUTH.sendCode(email);
-    $('#auth-step2').hidden = false;
-    sendBtn.textContent = 'Code sent';
-    $('#auth-code').focus();
-  } catch (e) {
-    showAuthError(String(e.message || e));
-    sendBtn.disabled = false;
-    sendBtn.textContent = original;
-  }
+/* Old enough to hold the card the trial requires. Checked here for a fast
+   answer and again on the server, which is the one that counts. */
+function ageFrom(v) {
+  const d = new Date(v + 'T00:00:00Z');
+  if (isNaN(d)) return null;
+  const n = new Date();
+  let a = n.getUTCFullYear() - d.getUTCFullYear();
+  const m = n.getUTCMonth() - d.getUTCMonth();
+  if (m < 0 || (m === 0 && n.getUTCDate() < d.getUTCDate())) a--;
+  return a;
 }
-if (sendBtn) sendBtn.onclick = requestCode;
 
-const resendBtn = $('#auth-resend');
-if (resendBtn) resendBtn.onclick = () => { sendBtn.disabled = false; requestCode(); };
+const suBtn = $('#su-submit');
+if (suBtn) suBtn.onclick = async () => {
+  const name = ($('#su-name').value || '').trim();
+  const email = ($('#su-email').value || '').trim();
+  const pass = $('#su-pass').value || '';
+  const dob = $('#su-dob').value || '';
+  const phone = ($('#su-phone').value || '').trim();
+  const sms = $('#su-sms').checked;
+  $('#su-error').hidden = true;
 
-const verifyBtn = $('#auth-verify');
-async function submitCode() {
-  const code = ($('#auth-code').value || '').trim();
-  $('#auth-error').hidden = true;
-  verifyBtn.disabled = true;
-  verifyBtn.textContent = 'Checking…';
+  if (name.length < 2) return showErr('#su-error', 'Tell us your name.');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return showErr('#su-error', 'That email does not look right.');
+  if (pass.length < 8) return showErr('#su-error', 'Your password needs at least 8 characters.');
+  if (!dob) return showErr('#su-error', 'We need your date of birth.');
+  const age = ageFrom(dob);
+  if (age === null) return showErr('#su-error', 'That date does not look right.');
+  if (age < 18) return showErr('#su-error', 'You need to be 18 or older to use WhyViral.');
+  if (sms && !phone) return showErr('#su-error', 'Add a phone number, or untick the text-message box.');
+
+  suBtn.disabled = true;
+  suBtn.textContent = 'Creating your account…';
   try {
-    await WV_AUTH.verifyCode(authEmail, code);
+    const r = await WV_AUTH.signUp(email, pass);
+    if (!r.signedIn) {
+      showErr('#su-error', 'Account created. Check your inbox to confirm your email, then sign in.');
+      suBtn.textContent = 'Create account';
+      return;
+    }
+    /* Store the consent wording exactly as shown, not a paraphrase — that is
+       the record that matters if anyone ever asks what was agreed to. */
+    await WV_AUTH.saveProfile({
+      fullName: name, birthdate: dob,
+      phone: phone || null, phoneConsent: sms,
+      consentText: sms ? ($('#su-sms-text').textContent || '').trim() : null,
+      marketingOptIn: $('#su-marketing').checked,
+    });
+    WV_AUTH.invalidate();
+    const acct = await refreshAccount();
+    toast('Account created');
+    renderPaywall(null, acct);
+    show(acct.subscribed ? 'welcome' : 'paywall');
+  } catch (e) {
+    const msg = String(e.message || e);
+    showErr('#su-error', /already registered|already been/i.test(msg)
+      ? 'That email already has an account. Sign in instead.' : msg);
+    suBtn.disabled = false;
+    suBtn.textContent = 'Create account';
+  }
+};
+
+const siBtn = $('#si-submit');
+if (siBtn) siBtn.onclick = async () => {
+  const email = ($('#si-email').value || '').trim();
+  const pass = $('#si-pass').value || '';
+  $('#auth-error').hidden = true;
+  $('#auth-sent').hidden = true;
+  if (!email || !pass) return showErr('#auth-error', 'Enter your email and password.');
+  siBtn.disabled = true;
+  siBtn.textContent = 'Signing in…';
+  try {
+    await WV_AUTH.signIn(email, pass);
     WV_AUTH.invalidate();
     await refreshAccount();
     toast('Signed in');
     show('welcome');
   } catch (e) {
-    showAuthError(String(e.message || e));
-    verifyBtn.disabled = false;
-    verifyBtn.textContent = 'Sign in';
+    showErr('#auth-error', 'Wrong email or password.');
+    siBtn.disabled = false;
+    siBtn.textContent = 'Sign in';
   }
-}
-if (verifyBtn) verifyBtn.onclick = submitCode;
+};
 
-const codeInput = $('#auth-code');
-if (codeInput) {
-  codeInput.addEventListener('input', () => {
-    codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, 6);
-    if (codeInput.value.length === 6) submitCode();     /* auto-submit on the 6th digit */
-  });
-  codeInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitCode(); });
-}
-$('#auth-email')?.addEventListener('keydown', e => { if (e.key === 'Enter') requestCode(); });
+const resetLink = $('#go-reset');
+if (resetLink) resetLink.onclick = async (ev) => {
+  ev.preventDefault();
+  const email = ($('#si-email').value || '').trim();
+  $('#auth-error').hidden = true;
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return showErr('#auth-error', 'Enter your email first, then tap reset.');
+  try { await WV_AUTH.sendReset(email); $('#auth-sent').hidden = false; }
+  catch (e) { showErr('#auth-error', String(e.message || e)); }
+};
+
+$('#go-signin')?.addEventListener('click', e => { e.preventDefault(); show('auth'); });
+$('#go-signup')?.addEventListener('click', e => { e.preventDefault(); show('signup'); });
+$('#si-pass')?.addEventListener('keydown', e => { if (e.key === 'Enter') siBtn.click(); });
 
 const payGo = $('#paywall-go');
 if (payGo) payGo.onclick = async () => {
   const signedIn = await WV_AUTH.isSignedIn();
-  if (!signedIn) {
-    $('#auth-title').textContent = 'Sign in to subscribe';
-    $('#auth-lede').textContent = 'We need an email to attach your subscription to. No password required.';
-    show('auth');
-    return;
-  }
+  if (!signedIn) { show('signup'); return; }
   payGo.disabled = true;
   try {
     const r = await WV_AUTH.apiFetch('/api/checkout?plan=' + chosenPlan, { method: 'POST' });
@@ -592,14 +629,8 @@ if (payGo) payGo.onclick = async () => {
    Read it before captureRedirect(), which clears the fragment. */
 function routeFromHash() {
   const h = (location.hash || '').replace('#', '').toLowerCase();
-  if (h === 'signin' || h === 'signup') {
-    if (h === 'signup') {
-      $('#auth-title').textContent = 'Create your account';
-      $('#auth-lede').textContent = "Enter your email and we'll send you a 6-digit code. No password to remember.";
-    }
-    history.replaceState(null, '', location.pathname);
-    return 'auth';
-  }
+  if (h === 'signin') { history.replaceState(null, '', location.pathname); return 'auth'; }
+  if (h === 'signup') { history.replaceState(null, '', location.pathname); return 'signup'; }
   if (h === 'pricing' || h === 'upgrade') { history.replaceState(null, '', location.pathname); return 'paywall'; }
   return null;
 }
@@ -614,7 +645,7 @@ function routeFromHash() {
     /* A dead magic link used to leave a blank page. Say what happened and
        put them straight back into the code flow. */
     show('auth');
-    showAuthError(result);
+    showErr('#auth-error', result);
   }
   const acct = await refreshAccount();
   /* An expired-link message outranks a deep link; otherwise honour it. */

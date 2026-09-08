@@ -135,3 +135,17 @@ alter table trial_claims enable row level security;
 -- Normalised email lives on the account so duplicates are visible in queries.
 alter table accounts add column if not exists email_normalized text;
 create index if not exists accounts_email_norm_idx on accounts(email_normalized);
+
+-- ---------------------------------------------------------------- profiles
+-- Collected at sign-up. Phone and marketing consent are stored with the exact
+-- wording shown and the moment it was given, because "they ticked a box" is not
+-- a defence under TCPA — you need to show what they agreed to.
+alter table accounts add column if not exists full_name        text;
+alter table accounts add column if not exists phone            text;
+alter table accounts add column if not exists phone_consent    boolean default false;
+alter table accounts add column if not exists consent_text     text;
+alter table accounts add column if not exists consent_at       timestamptz;
+alter table accounts add column if not exists birthdate        date;
+alter table accounts add column if not exists marketing_opt_in boolean default false;
+
+create index if not exists accounts_phone_idx on accounts(phone);

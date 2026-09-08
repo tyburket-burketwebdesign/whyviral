@@ -9,9 +9,14 @@ one tab:
 | `confirm.html` | Confirm signup | Confirm your WhyViral account |
 | `recovery.html` | Reset password | Reset your WhyViral sign-in |
 
-`{{ .Token }}` renders the 6-digit code and **must stay in the template** — the
-app's code box cannot be completed without it. `{{ .ConfirmationURL }}` is the
-one-click link, kept as a convenience for when it survives the trip.
+`{{ .Token }}` renders the 6-digit code and **must stay in the template**.
+
+**Do not add `{{ .ConfirmationURL }}` back.** In Supabase the code and the magic
+link are the *same* one-time token. Outlook and Gmail prefetch links to scan
+them for malware, and that consumes the token — so including the link means the
+code in the very same email is already dead by the time someone types it. That
+is the cause of "Token has expired or is invalid" on a code you just received.
+No link in the email means nothing to prefetch.
 
 ## Why they look the way they do
 

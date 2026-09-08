@@ -423,3 +423,22 @@ textarea{resize:vertical;min-height:62px;font-size:14px;margin-top:7px}
 }
 #auth-step2{margin-top:18px;padding-top:18px;border-top:1px solid var(--line-2)}
 #auth-step2 .btn-quiet{margin-top:8px}
+
+/* ---------- sign-up form ---------- */
+input[type=password],input[type=tel],input[type=date]{
+  width:100%;font-family:inherit;font-size:15px;color:var(--ink);
+  background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 13px;
+}
+input[type=password]:focus,input[type=tel]:focus,input[type=date]:focus{
+  border-color:var(--pink);outline:none;box-shadow:0 0 0 3px rgba(255,61,139,.13);
+}
+.opt{font-weight:400;color:var(--ink-4);font-size:12px;margin-left:5px}
+.check{display:flex;gap:11px;align-items:flex-start;margin-bottom:16px;cursor:pointer}
+.check input{
+  width:19px;height:19px;flex:0 0 19px;margin-top:2px;accent-color:var(--pink);cursor:pointer;
+}
+.check span{font-size:13px;color:var(--ink-2);line-height:1.55}
+.auth-alt a{color:var(--pink-deep);text-decoration:none;font-weight:500}
+.auth-alt a:hover{text-decoration:underline}
+#screen-signup .field{margin-bottom:16px}
+@media(min-width:760px){#screen-signup{max-width:520px;margin:0 auto}}

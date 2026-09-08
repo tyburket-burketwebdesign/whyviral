@@ -66,37 +66,59 @@ const WV_AUTH = (function () {
     return s;
   }
 
-  async function sendCode(email) {
-    if (!configured()) throw new Error('Sign-in is not configured yet.');
-    await sb('/auth/v1/otp', {
-      method: 'POST',
-      body: JSON.stringify({ email, create_user: true, options: { email_redirect_to: location.origin } }),
-    });
-    return true;
-  }
-
-  /* Verify a 6-digit code.
-
-     Codes exist because magic links are unreliable in practice: Outlook and
-     Gmail prefetch links to scan them for malware, which consumes a one-time
-     link before the person ever clicks it. A code cannot be consumed by a
-     scanner. The link still works when it survives — this is the fallback that
-     always works. */
-  async function verifyCode(email, code) {
-    if (!configured()) throw new Error('Sign-in is not configured yet.');
-    const token = String(code).replace(/\D/g, '');
-    if (token.length !== 6) throw new Error('Enter the 6-digit code from the email.');
-    const r = await sb('/auth/v1/verify', {
-      method: 'POST',
-      body: JSON.stringify({ email, token, type: 'email' }),
-    });
-    if (!r.access_token) throw new Error('That code did not work. Request a new one.');
+  const saveSession = r => {
     writeSession({ ...r, expires_at: Math.floor(Date.now() / 1000) + (r.expires_in || 3600) });
+    return r;
+  };
+
+  /* Create an account with an email and a password.
+
+     Supabase hashes and stores the password; it never reaches our database or
+     our code. If the project has email confirmation switched on, the response
+     carries no session and the caller has to tell the person to confirm. */
+  async function signUp(email, password) {
+    if (!configured()) throw new Error('Sign-up is not configured yet.');
+    const r = await sb('/auth/v1/signup', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    if (r.access_token) { saveSession(r); return { signedIn: true }; }
+    return { signedIn: false, needsConfirmation: true };
+  }
+
+  async function signIn(email, password) {
+    if (!configured()) throw new Error('Sign-in is not configured yet.');
+    const r = await sb('/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    if (!r.access_token) throw new Error('Wrong email or password.');
+    saveSession(r);
     return true;
   }
 
-  /* Supabase returns the session in the URL fragment. Read it, store it, and
-     strip it from the address bar so tokens don't sit in history. */
+  async function sendReset(email) {
+    if (!configured()) throw new Error('Not configured.');
+    await sb('/auth/v1/recover', {
+      method: 'POST',
+      body: JSON.stringify({ email, options: { redirect_to: location.origin + '/app.html' } }),
+    });
+    return true;
+  }
+
+  /* Save the sign-up profile. Runs after the account exists, so the request
+     carries a real token and the server can trust who it belongs to. */
+  async function saveProfile(profile) {
+    const r = await apiFetch('/api/profile', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(profile),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.message || 'Could not save your details.');
+    return j;
+  }
+
   /* Returns 'signed-in', an error string, or false. Supabase puts both the
      session and any failure in the URL fragment. */
   function captureRedirect() {
@@ -147,7 +169,7 @@ const WV_AUTH = (function () {
   }
 
   return {
-    deviceId, currentSession, sendCode, verifyCode, captureRedirect, signOut,
+    deviceId, currentSession, signUp, signIn, sendReset, saveProfile, captureRedirect, signOut,
     apiFetch, status, configured,
     invalidate: () => { cached = null; },
     isSignedIn: async () => !!(await currentSession()),

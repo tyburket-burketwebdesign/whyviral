@@ -240,17 +240,22 @@ sign-in screen with an explanation instead of a blank page.
 
 ## Supabase setup
 
-**Authentication → Emails → Magic Link** — the template must include the token:
+**Authentication → Emails → Magic Link** — use `emails/code.html`, or at minimum:
 
 ```
 <p>Your WhyViral sign-in code:</p>
 <h2>{{ .Token }}</h2>
-<p>Or use this link: <a href="{{ .ConfirmationURL }}">Sign in</a></p>
 <p>The code expires in one hour.</p>
 ```
 
-`{{ .Token }}` is the 6-digit code. Without it the email arrives with only a
-link and the code box cannot be completed.
+**No link.** The code and the magic link are the same one-time token, and email
+scanners prefetch links — which consumes the token and kills the code in the
+same email. That is why a freshly received code can come back "expired".
+
+The app also verifies against all three Supabase token types (`email`,
+`signup`, `magiclink`), because a first-time account issues `signup` and
+verifying with the wrong type returns the same misleading "expired or invalid"
+message.
 
 **Authentication → URL Configuration**
 - Site URL: `https://whyviral.io`
@@ -267,3 +272,55 @@ is not meant for production. Before launch, connect your own sender under
 **Project Settings → Authentication → SMTP Settings** — Resend, Postmark and
 SendGrid all have free tiers. Skipping this means sign-in emails silently stop
 arriving on your first busy day.
+
+---
+
+# Sign-up and the data it collects
+
+Sign-up is a real form now: name, email, password, date of birth, and an
+optional phone number. Supabase hashes the password — it never reaches our
+database or our code. The profile is saved through `/api/profile`, which
+re-validates everything the browser checked, because browser validation is a
+convenience and not a control.
+
+## Age
+
+18 or older, enforced in the browser and again on the server. Under-18 gets a
+clear refusal and **nothing is written to the database** — no partial record of
+a minor. 18 matches the age needed to hold the card the trial requires and keeps
+you clear of the child-privacy rules that would otherwise apply.
+
+## Phone and SMS consent
+
+The box is unticked by default and the number is optional. If someone ticks it,
+three things are stored: the number, the flag, and **the exact wording they were
+shown**, with a timestamp.
+
+That last part is the point. Under the TCPA, "they ticked a box" is not a
+defence — you need to show what they agreed to and when. If you change the
+consent wording on the form, previously stored records still hold the old text,
+which is correct.
+
+A number can be stored without consent. Consent can never be stored without a
+number.
+
+**Only text people who ticked it.** The record is worth nothing if the practice
+does not match it.
+
+## Supabase settings this needs
+
+**Authentication → Providers → Email**
+- Enable Email provider
+- **Confirm email: off** — with it on, sign-up returns no session and the person
+  is stranded on a "check your inbox" step before they have seen the product.
+  The code handles that case, but it costs conversions.
+
+Password reset uses `/auth/v1/recover` and returns to `/app.html`. Keep the
+Reset Password email template pointed at `{{ .ConfirmationURL }}` — a reset link
+is a link, and unlike a sign-in code there is nothing better to use.
+
+## After sign-up
+
+The person lands on the paywall with their trial ready to start. `TRIAL_MODE`
+still governs what happens next: `card` sends them to Stripe Checkout, `free`
+gives them three analyses first.

@@ -710,3 +710,38 @@ body.booting .screen{display:none !important}
 .tool-grid{align-items:stretch}
 .tool{display:flex;flex-direction:column}
 .tool p{margin-top:auto}
+
+/* ================= checkout success ================= */
+#screen-welcome-pro.active{display:flex;justify-content:center;padding:40px 0 80px}
+@media(min-width:760px){#screen-welcome-pro.active{align-items:center;min-height:calc(100vh - 160px)}}
+.celebrate{
+  width:100%;max-width:460px;background:var(--paper);border:1px solid var(--line);
+  border-radius:18px;padding:36px 30px;text-align:center;box-shadow:var(--shadow);
+}
+.celebrate h2{font-size:30px;letter-spacing:-.035em;margin-bottom:8px}
+.celebrate .lede{margin:0 auto 26px;max-width:34ch}
+.tick{width:64px;height:64px;margin:0 auto 20px}
+.tick svg{width:100%;height:100%;overflow:visible}
+.tick circle{
+  fill:none;stroke:var(--pink);stroke-width:2.5;
+  stroke-dasharray:151;stroke-dashoffset:151;
+  animation:ring .5s cubic-bezier(.2,.7,.3,1) forwards;
+}
+.tick path{
+  fill:none;stroke:var(--pink);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:36;stroke-dashoffset:36;
+  animation:draw .32s cubic-bezier(.3,.8,.4,1) .38s forwards;
+}
+@keyframes ring{to{stroke-dashoffset:0}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){
+  .tick circle,.tick path{animation:none;stroke-dashoffset:0}
+}
+.celebrate-list{text-align:left;margin-bottom:24px}
+.cl{display:flex;gap:12px;align-items:flex-start;padding:9px 0}
+.cl span{
+  width:22px;height:22px;flex:0 0 22px;border-radius:50%;background:var(--cream);
+  border:1px solid var(--line);display:grid;place-items:center;
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-3);margin-top:1px;
+}
+.cl p{font-size:14.5px;color:var(--ink-2);line-height:1.5}

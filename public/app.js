@@ -466,6 +466,17 @@ window.__wfReady = true;
 
 /* ---------------- accounts, trial, paywall ---------------- */
 function renderPaywall(info, acct) {
+  /* Someone who has already used a trial gets a straight subscribe offer.
+     Advertising "7 days free" to them is a promise Stripe will not honour. */
+  const lapsed = acct && (acct.plan === 'pro' || acct.status === 'canceled' || acct.status === 'past_due');
+  if (lapsed) {
+    $('#paywall-eyebrow').textContent = 'Welcome back';
+    $('#paywall-title').textContent = 'Pick up where you left off';
+    $('#paywall-lede').textContent = 'Your breakdowns are still saved. Resubscribe to run new ones.';
+    $('#paywall-go').textContent = 'Resubscribe';
+    $('#paywall-error').hidden = true;
+    return;
+  }
   const card = (acct?.trialMode || 'card') === 'card';
   const days = acct?.trialDays || 7;
   $('#paywall-eyebrow').textContent = card ? `${days} days free, then $29` : "You've used your free breakdowns";
@@ -524,39 +535,73 @@ const fmtDate = iso => {
   catch { return '—'; }
 };
 
+/* One state machine for the account banner. Every branch a real customer can
+   land in, including the unhappy ones: a declined card, a cancellation still
+   inside its paid period, and a subscription that has already lapsed. Getting
+   these wrong is worse than having no banner — telling someone whose payment
+   just failed that they can have a free trial is how you lose them. */
+function accountState(s) {
+  if (!s.billing || !s.signedIn) return 'anon';
+  if (s.status === 'past_due') return 'past_due';
+  if (s.status === 'trialing') return 'trialing';
+  if (s.subscribed && s.cancelAtPeriodEnd) return 'cancelling';
+  if (s.subscribed) return 'active';
+  /* plan 'pro' or a terminal status means they have subscribed before, so a
+     "free trial" offer would be a promise we cannot keep. */
+  if (s.plan === 'pro' || s.status === 'canceled') return 'lapsed';
+  if (s.trialMode !== 'card' && typeof s.remaining === 'number' && s.remaining > 0) return 'free_runs';
+  return 'new';
+}
+
 function renderStatus(s) {
   const bar = $('#status-bar');
   if (!bar) return;
   bar.innerHTML = '';
-  if (!s.billing || !s.signedIn) { bar.hidden = true; return; }
+  const state = accountState(s);
+  if (state === 'anon') { bar.hidden = true; return; }
 
   const left = daysLeft(s.renewsAt);
   const main = el('div', 'status-main');
+  const title = t => main.appendChild(el('span', 'status-title', t));
+  const sub = t => { if (t) main.appendChild(el('span', 'status-sub', t)); };
+  let action = null;
 
-  if (s.status === 'trialing') {
-    main.appendChild(el('span', 'status-title', left === 0 ? 'Trial ends today' : `${left} day${left === 1 ? '' : 's'} left in your trial`));
-    main.appendChild(el('span', 'status-sub', s.cancelAtPeriodEnd
-      ? 'Cancelled — access ends when the trial does.'
-      : `Then $29 a month from ${fmtDate(s.renewsAt)}.`));
-  } else if (s.subscribed) {
-    main.appendChild(el('span', 'status-title', 'Pro — unlimited breakdowns'));
-    main.appendChild(el('span', 'status-sub', s.cancelAtPeriodEnd
-      ? `Cancelled. Access until ${fmtDate(s.renewsAt)}.`
-      : (s.renewsAt ? `Renews ${fmtDate(s.renewsAt)}.` : '')));
-  } else if (s.trialMode === 'card') {
-    main.appendChild(el('span', 'status-title', 'Your trial has not started'));
-    main.appendChild(el('span', 'status-sub', `${s.trialDays || 7} days free, then $29 a month.`));
+  if (state === 'past_due') {
+    title('Your last payment failed');
+    sub('Update your card to keep your access. Nothing else has changed.');
+    action = ['Update card', () => openBilling()];
+  } else if (state === 'trialing') {
+    title(left === 0 ? 'Trial ends today' : `${left} day${left === 1 ? '' : 's'} left in your trial`);
+    sub(s.cancelAtPeriodEnd ? 'Cancelled — access ends when the trial does.'
+                            : `Then $29 a month from ${fmtDate(s.renewsAt)}.`);
+  } else if (state === 'cancelling') {
+    title('Subscription cancelled');
+    sub(`You keep full access until ${fmtDate(s.renewsAt)}.`);
+    action = ['Resume subscription', () => openBilling()];
+  } else if (state === 'active') {
+    title('Pro — unlimited breakdowns');
+    sub(s.renewsAt ? `Renews ${fmtDate(s.renewsAt)}.` : '');
+  } else if (state === 'lapsed') {
+    title('Your subscription has ended');
+    sub('Resubscribe to pick your breakdowns back up. $29 a month, cancel any time.');
+    action = ['Resume subscription', () => { renderPaywall(null, s); show('paywall'); }];
+  } else if (state === 'free_runs') {
+    title(`${s.remaining} free breakdown${s.remaining === 1 ? '' : 's'} left`);
+    sub('Subscribe for unlimited.');
+    action = ['Subscribe', () => { renderPaywall(null, s); show('paywall'); }];
   } else {
-    main.appendChild(el('span', 'status-title', `${s.remaining} free breakdown${s.remaining === 1 ? '' : 's'} left`));
-    main.appendChild(el('span', 'status-sub', 'Subscribe for unlimited.'));
+    title('Your trial has not started');
+    sub(`${s.trialDays || 7} days free, then $29 a month.`);
+    action = ['Start free trial', () => { renderPaywall(null, s); show('paywall'); }];
   }
-  bar.appendChild(main);
 
-  if (!s.subscribed) {
-    const b = el('button', 'btn btn-primary', s.trialMode === 'card' ? 'Start free trial' : 'Subscribe');
-    b.onclick = () => { renderPaywall(null, s); show('paywall'); };
+  bar.appendChild(main);
+  if (action) {
+    const b = el('button', 'btn btn-primary', action[0]);
+    b.onclick = action[1];
     bar.appendChild(b);
-  } else if (s.status === 'trialing' && left !== null) {
+  }
+  if (state === 'trialing' && left !== null) {
     const track = el('div', 'status-track');
     const fill = el('i');
     const total = s.trialDays || 7;
@@ -594,15 +639,18 @@ async function refreshAccount() {
       : (s.subscribed ? 'Pro' : 'No plan');
 
     if (chip) {
-      if (s.status === 'trialing') {
+      const st = accountState(s);
+      chip.hidden = false;
+      if (st === 'past_due') { chip.className = 'trial-chip warn'; chip.textContent = 'Card failed'; }
+      else if (st === 'trialing') {
         chip.className = 'trial-chip' + (left !== null && left <= 2 ? ' warn' : '');
         chip.textContent = left === 0 ? 'Ends today' : `${left}d left`;
-        chip.hidden = false;
-      } else if (s.subscribed) {
-        chip.className = 'trial-chip pro'; chip.textContent = 'Pro'; chip.hidden = false;
-      } else if (s.trialMode !== 'card' && typeof s.remaining === 'number') {
-        chip.className = 'trial-chip'; chip.textContent = `${s.remaining} free`; chip.hidden = false;
-      } else { chip.hidden = true; }
+      }
+      else if (st === 'cancelling') { chip.className = 'trial-chip pro'; chip.textContent = 'Ends soon'; }
+      else if (st === 'active') { chip.className = 'trial-chip pro'; chip.textContent = 'Pro'; }
+      else if (st === 'lapsed') { chip.className = 'trial-chip warn'; chip.textContent = 'Ended'; }
+      else if (st === 'free_runs') { chip.className = 'trial-chip'; chip.textContent = `${s.remaining} free`; }
+      else chip.hidden = true;
     }
 
     $('#set-name').textContent = s.name || '—';
@@ -619,9 +667,15 @@ async function refreshAccount() {
   renderStatus(s);
   const note = $('#hero-note');
   if (note) {
-    note.textContent = s.subscribed ? 'Paste your links below.'
-      : (s.trialMode === 'card' ? `${s.trialDays || 7} days free, then $29 a month. Cancel any time.`
-                                : 'No account needed for your first breakdown.');
+    let st = accountState(s);
+    /* A signed-out visitor still needs to know what the first run costs. */
+    if (st === 'anon') st = s.trialMode === 'card' ? 'new' : 'free_runs';
+    note.textContent =
+      st === 'active' || st === 'cancelling' || st === 'trialing' ? 'Paste your links below.'
+      : st === 'past_due' ? 'Update your card to carry on.'
+      : st === 'lapsed' ? 'Resubscribe to run breakdowns again.'
+      : st === 'free_runs' ? 'No account needed for your first breakdown.'
+      : `${s.trialDays || 7} days free, then $29 a month. Cancel any time.`;
   }
   return s;
 }
@@ -856,6 +910,26 @@ if (payGo) payGo.onclick = async () => {
 
 /* The marketing site links straight to a screen, so honour the hash.
    Read it before captureRedirect(), which clears the fragment. */
+/* Stripe hands the customer back with ?checkout=success. The webhook that
+   flips the subscription on may not have landed yet, so poll briefly rather
+   than telling a paying customer they have no plan. */
+async function waitForSubscription(tries = 6, gapMs = 1200) {
+  for (let i = 0; i < tries; i++) {
+    const s = await WV_AUTH.status(true);
+    if (s.subscribed) return s;
+    if (i < tries - 1) await new Promise(r => setTimeout(r, gapMs));
+  }
+  return WV_AUTH.status(true);
+}
+
+function checkoutResult() {
+  const p = new URLSearchParams(location.search || '');
+  const c = p.get('checkout');
+  if (!c) return null;
+  history.replaceState(null, '', location.pathname);   /* don't leave it in history */
+  return c;
+}
+
 function routeFromHash() {
   const h = (location.hash || '').replace('#', '').toLowerCase();
   if (h === 'signin') { history.replaceState(null, '', location.pathname); return 'auth'; }
@@ -866,6 +940,7 @@ function routeFromHash() {
 }
 
 (async function bootAccount() {
+  const checkout = checkoutResult();
   const deepLink = routeFromHash();
   const result = WV_AUTH.captureRedirect();
   if (result === 'signed-in') { WV_AUTH.invalidate(); toast('Signed in'); }
@@ -882,6 +957,27 @@ function routeFromHash() {
   } else if (deepLink) {
     if (deepLink === 'paywall') renderPaywall(null, acct);
     show(deepLink);
+  } else if (checkout === 'success') {
+    /* Show the confirmation immediately; confirm the subscription behind it. */
+    show('welcome-pro');
+    document.body.classList.remove('booting');
+    const s = await waitForSubscription();
+    renderDashboard(s);
+    if (!s.subscribed) {
+      $('#pro-kicker').textContent = 'Payment received';
+      $('#pro-title').textContent = 'Almost there';
+      $('#pro-sub').textContent = 'Stripe has your payment. Your plan takes a moment to activate — refresh if the app still asks you to subscribe.';
+      $('#pro-note').textContent = 'If it stays like this for more than a minute, email support@whyviral.io and we will sort it.';
+    } else if (s.status !== 'trialing') {
+      $('#pro-kicker').textContent = 'Subscribed';
+      $('#pro-sub').textContent = 'Everything is unlocked. Cancel any time from your account.';
+      $('#pro-note').textContent = 'A receipt is on its way to your inbox.';
+    }
+    return;
+  } else if (checkout === 'cancelled') {
+    renderPaywall(null, acct);
+    show('paywall');
+    showErr('#paywall-error', 'Checkout was cancelled — nothing has been charged.');
   } else if (acct.signedIn) {
     /* Signed in: the workspace, not the pitch. */
     renderDashboard(acct);
@@ -989,6 +1085,11 @@ function renderDashboard(s) {
     wrap.hidden = hist.length === 0;
   }
 }
+
+$('#pro-start')?.addEventListener('click', async () => {
+  renderDashboard(await WV_AUTH.status());
+  show('home');
+});
 
 $('#tool-history')?.addEventListener('click', () => { renderHistory(); show('history'); });
 $('#recent-all')?.addEventListener('click', () => { renderHistory(); show('history'); });

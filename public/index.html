@@ -22,8 +22,13 @@
      Runs before paint so there is no flash of the wrong page. */
   (function () {
     var h = window.location.hash || '';
+    var q = window.location.search || '';
     if (/(^|[#&])(access_token|error_code|error_description|type)=/.test(h)) {
       window.location.replace('/app.html' + h);
+    } else if (/[?&]checkout=/.test(q)) {
+      /* Stripe returns here on older links. Hand it to the app so a paying
+         customer never lands on a page inviting them to sign in. */
+      window.location.replace('/app.html' + q);
     }
   })();
 </script>

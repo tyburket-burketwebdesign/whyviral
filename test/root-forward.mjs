@@ -12,9 +12,9 @@ const check = (n, c, d = '') => { c ? pass++ : (fail++, console.log(`  FAIL: ${n
    window with the same shape. Same code, observable side effect. */
 const guard = src.match(/\(function \(\) \{\s*var h = window\.location\.hash[\s\S]*?\}\)\(\);/)[0];
 
-function land(hash) {
+function land(hash, search = '') {
   let replaced = null;
-  const window = { location: { hash, replace: (u) => { replaced = u; } } };
+  const window = { location: { hash, search, replace: (u) => { replaced = u; } } };
   new Function('window', guard)(window);
   return replaced;
 }
@@ -31,6 +31,12 @@ check('no hash stays on the site', land('') === null);
 check('anchor link stays on the site', land('#pricing') === null);
 check('faq anchor stays on the site', land('#faq') === null);
 check('empty hash stays', land('#') === null);
+
+console.log('\n--- checkout returns are forwarded too ---');
+check('checkout success forwarded', land('', '?checkout=success') === '/app.html?checkout=success');
+check('checkout cancelled forwarded', land('', '?checkout=cancelled') === '/app.html?checkout=cancelled');
+check('session id preserved', String(land('', '?checkout=success&session=cs_123')).includes('session=cs_123'));
+check('ordinary query strings ignored', land('', '?utm_source=tiktok') === null);
 
 console.log(`\n--- ${pass} passed, ${fail} failed ---`);
 process.exit(fail ? 1 : 0);

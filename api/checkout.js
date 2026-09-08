@@ -57,8 +57,10 @@ async function onRequest({ request, env }) {
     const session = await stripe(env, '/checkout/sessions', {
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${origin}/?checkout=success`,
-      cancel_url: `${origin}/?checkout=cancelled`,
+      /* Back into the app, not the marketing site. Landing a paying customer
+         on a page with a "Sign in" button reads as being logged out. */
+      success_url: `${origin}/app.html?checkout=success&session={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/app.html?checkout=cancelled`,
       client_reference_id: account.id,
       ...(ent.stripe_customer_id ? { customer: ent.stripe_customer_id } : { customer_email: account.email || claims.email }),
       allow_promotion_codes: true,

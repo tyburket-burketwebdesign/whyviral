@@ -55,7 +55,7 @@ check('card mode does not claim "no card"', !/no card/i.test($('#hero-note').tex
 ({ $ } = await boot('', { trialMode: 'free', remaining: 3 }));
 check('free mode says no account needed', /no account needed/i.test($('#hero-note').textContent), $('#hero-note').textContent);
 
-({ $ } = await boot('', { subscribed: true, status: 'active' }));
+({ $ } = await boot('', { signedIn: true, subscribed: true, status: 'active', plan: 'pro' }));
 check('subscriber sees unrestricted copy', /paste your links/i.test($('#hero-note').textContent), $('#hero-note').textContent);
 
 console.log(`\n--- ${pass} passed, ${fail} failed ---`);

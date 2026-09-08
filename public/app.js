@@ -5,7 +5,18 @@ const MAX = 5, MIN = 3, KEY = 'whyviral.history.v1', LEGACY_KEY = 'whyfamous.his
 let rows = [], current = null, scriptCount = 3;
 
 /* ---------------- routing ---------------- */
+/* Tracks whether anyone is signed in, so routing can be guarded in one place
+   rather than at every call site. */
+let signedInNow = false;
+
 function show(name) {
+  /* The marketing hero is for visitors only. A signed-in person reaching it —
+     via a back button, the logo, an empty state — gets the dashboard instead.
+     Guarding here means no future call site can reintroduce the problem. */
+  if (name === 'welcome' && signedInNow) {
+    name = 'home';
+    try { renderDashboard(WV_AUTH.cached && WV_AUTH.cached() || {}); } catch {}
+  }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const t = $('#screen-' + name);
   if (t) t.classList.add('active');
@@ -612,8 +623,12 @@ function renderStatus(s) {
   bar.hidden = false;
 }
 
-async function refreshAccount() {
-  const s = await WV_AUTH.status(true);
+/* Accepts a pre-fetched account so the caller can reconcile with Stripe before
+   anything renders. Rendering "your trial has not started" and correcting it a
+   moment later is worse than waiting 300ms. */
+async function refreshAccount(pre) {
+  const s = pre || await WV_AUTH.status(true);
+  signedInNow = !!s.signedIn;
   const chip = $('#trial-chip'), wrap = $('#avatar-wrap'), signin = $('#nav-signin');
 
   if (!s.billing) {
@@ -682,6 +697,7 @@ async function refreshAccount() {
 
 async function doSignOut() {
   WV_AUTH.signOut(); WV_AUTH.invalidate();
+  signedInNow = false;
   setMenu(false);
   await refreshAccount();
   show('welcome');
@@ -703,6 +719,36 @@ async function openBilling() {
 }
 $('#menu-billing')?.addEventListener('click', () => { setMenu(false); openBilling(); });
 $('#set-billing')?.addEventListener('click', openBilling);
+
+$('#set-diagnose')?.addEventListener('click', async () => {
+  const b = $('#set-diagnose'), out = $('#diag-out');
+  b.disabled = true; b.textContent = 'Checking…';
+  out.innerHTML = '';
+  try {
+    const r = await WV_AUTH.apiFetch('/api/diagnose');
+    const d = await r.json();
+    const box = el('div', 'diag ' + (d.ok ? 'good' : 'bad'));
+    box.appendChild(el('p', 'diag-verdict', d.verdict || 'No verdict'));
+    if (d.fix) box.appendChild(el('p', 'diag-fix', d.fix));
+    const ul = el('div', 'diag-list');
+    (d.checks || []).forEach(c => {
+      const row = el('div', 'diag-row' + (c.pass ? '' : ' fail'));
+      row.appendChild(el('span', 'diag-mark', c.pass ? '✓' : '✗'));
+      row.appendChild(el('span', 'diag-name', c.name));
+      row.appendChild(el('span', 'diag-detail', String(c.detail ?? '')));
+      ul.appendChild(row);
+    });
+    box.appendChild(ul);
+    const copy = el('button', 'btn btn-quiet btn-sm btn-block', 'Copy full report');
+    copy.onclick = () => navigator.clipboard.writeText(JSON.stringify(d, null, 2)).then(
+      () => toast('Report copied'), () => toast('Copy blocked — select the text instead'));
+    box.appendChild(copy);
+    out.appendChild(box);
+  } catch (e) {
+    out.appendChild(el('p', 'error', 'Could not run diagnostics: ' + String(e.message || e)));
+  }
+  b.disabled = false; b.textContent = 'Run diagnostics';
+});
 
 $('#set-sync')?.addEventListener('click', async () => {
   const b = $('#set-sync');
@@ -970,7 +1016,20 @@ function routeFromHash() {
   const deepLink = routeFromHash();
   const result = WV_AUTH.captureRedirect();
   if (result === 'signed-in') { WV_AUTH.invalidate(); toast('Signed in'); }
-  const acct = await refreshAccount();
+
+  /* Reconcile BEFORE the first render. A signed-in account that looks
+     unsubscribed may simply be waiting on a webhook that never arrived, and
+     showing them a trial prompt they then watch disappear is confusing enough
+     that people assume the app is broken. */
+  let raw = await WV_AUTH.status(true);
+  if (raw.signedIn && !raw.subscribed && raw.status !== 'past_due') {
+    const res = await syncBilling();
+    if (res && res.synced) {
+      WV_AUTH.invalidate();
+      raw = await WV_AUTH.status(true);
+    }
+  }
+  const acct = await refreshAccount(raw);
 
   if (typeof result === 'string' && result && result !== 'signed-in' && result !== 'recovery') {
     /* Expired or already-used link. Put them on sign-in with a way forward. */
@@ -1005,19 +1064,6 @@ function routeFromHash() {
     show('paywall');
     showErr('#paywall-error', 'Checkout was cancelled — nothing has been charged.');
   } else if (acct.signedIn) {
-    /* Signed in but showing no plan: reconcile against Stripe once before
-       telling someone who may already be paying that they have no trial. */
-    if (!acct.subscribed && acct.status !== 'past_due') {
-      const res = await syncBilling();
-      if (res && res.synced) {
-        WV_AUTH.invalidate();
-        const fresh = await refreshAccount();
-        renderDashboard(fresh);
-        show('home');
-        document.body.classList.remove('booting');
-        return;
-      }
-    }
     renderDashboard(acct);
     show('home');
   }

@@ -64,7 +64,7 @@ check('still nothing sent', !calls.update);
 $('#rp-pass2').value = 'longenoughpw';
 $('#rp-submit').click(); await sleep(250);
 check('password updated', !!calls.update && calls.update.password === 'longenoughpw');
-check('returns to the app', $('#screen-welcome').classList.contains('active'));
+check('returns to the app', $('#screen-home').classList.contains('active') || $('#screen-welcome').classList.contains('active'));
 
 console.log('\n--- no flash before routing ---');
 ({ $, window } = boot('#signup')); 

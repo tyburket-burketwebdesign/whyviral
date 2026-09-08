@@ -210,6 +210,7 @@ const WV_AUTH = (function () {
     deviceId, currentSession, signUp, signIn, sendReset, updatePassword, saveProfile, stashProfile, flushProfile, captureRedirect, signOut,
     apiFetch, status, configured,
     invalidate: () => { cached = null; },
+    cached: () => cached,
     isSignedIn: async () => !!(await currentSession()),
   };
 })();

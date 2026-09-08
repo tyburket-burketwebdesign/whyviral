@@ -745,3 +745,16 @@ body.booting .screen{display:none !important}
   font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-3);margin-top:1px;
 }
 .cl p{font-size:14.5px;color:var(--ink-2);line-height:1.5}
+
+/* ================= diagnostics ================= */
+.diag{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--cream)}
+.diag.good{border-color:var(--blue)}
+.diag.bad{border-color:var(--pink)}
+.diag-verdict{font-size:14.5px;font-weight:600;line-height:1.45;margin-bottom:6px}
+.diag-fix{font-size:13.5px;color:var(--ink-2);line-height:1.55;margin-bottom:14px}
+.diag-list{border-top:1px solid var(--line-2);margin-bottom:14px}
+.diag-row{display:grid;grid-template-columns:16px 1fr auto;gap:9px;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--line-2)}
+.diag-mark{color:var(--blue-deep);font-size:12px}
+.diag-row.fail .diag-mark{color:var(--pink)}
+.diag-name{font-size:13px;color:var(--ink-2)}
+.diag-detail{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-4);text-align:right;word-break:break-all}

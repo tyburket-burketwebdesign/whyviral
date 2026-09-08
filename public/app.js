@@ -704,6 +704,19 @@ async function openBilling() {
 $('#menu-billing')?.addEventListener('click', () => { setMenu(false); openBilling(); });
 $('#set-billing')?.addEventListener('click', openBilling);
 
+$('#set-sync')?.addEventListener('click', async () => {
+  const b = $('#set-sync');
+  b.disabled = true; b.textContent = 'Checking Stripe…';
+  const res = await syncBilling();
+  WV_AUTH.invalidate();
+  const s = await refreshAccount();
+  b.disabled = false; b.textContent = 'Refresh subscription';
+  toast(res.synced ? `Updated — ${s.status === 'trialing' ? 'trial active' : s.status}`
+       : res.reason === 'no_subscription' ? 'Stripe has no subscription for this account'
+       : res.reason === 'no_customer' ? 'No Stripe customer for this email yet'
+       : 'Could not reach Stripe');
+});
+
 /* Default script count, remembered between visits. */
 const SCRIPTS_KEY = 'whyviral.scripts.v1';
 try {
@@ -913,12 +926,25 @@ if (payGo) payGo.onclick = async () => {
 /* Stripe hands the customer back with ?checkout=success. The webhook that
    flips the subscription on may not have landed yet, so poll briefly rather
    than telling a paying customer they have no plan. */
-async function waitForSubscription(tries = 6, gapMs = 1200) {
+async function syncBilling() {
+  try {
+    const r = await WV_AUTH.apiFetch('/api/sync', { method: 'POST' });
+    return await r.json();
+  } catch { return { synced: false, reason: 'network' }; }
+}
+
+/* Poll for the webhook, but ask Stripe directly as well. Whichever answers
+   first wins, so a misconfigured webhook can no longer strand a paying
+   customer on "your trial has not started". */
+async function waitForSubscription(tries = 5, gapMs = 1100) {
   for (let i = 0; i < tries; i++) {
     const s = await WV_AUTH.status(true);
     if (s.subscribed) return s;
+    if (i === 1) await syncBilling();          /* give the webhook one beat first */
     if (i < tries - 1) await new Promise(r => setTimeout(r, gapMs));
   }
+  await syncBilling();
+  WV_AUTH.invalidate();
   return WV_AUTH.status(true);
 }
 
@@ -979,7 +1005,19 @@ function routeFromHash() {
     show('paywall');
     showErr('#paywall-error', 'Checkout was cancelled — nothing has been charged.');
   } else if (acct.signedIn) {
-    /* Signed in: the workspace, not the pitch. */
+    /* Signed in but showing no plan: reconcile against Stripe once before
+       telling someone who may already be paying that they have no trial. */
+    if (!acct.subscribed && acct.status !== 'past_due') {
+      const res = await syncBilling();
+      if (res && res.synced) {
+        WV_AUTH.invalidate();
+        const fresh = await refreshAccount();
+        renderDashboard(fresh);
+        show('home');
+        document.body.classList.remove('booting');
+        return;
+      }
+    }
     renderDashboard(acct);
     show('home');
   }

@@ -399,3 +399,43 @@ Supabase happily issued an ES256 token, the API only understood HS256, rejected
 it, and reported the person as signed out with no error anywhere. If it ever
 happens again the sign-in form now says so explicitly instead of bouncing back
 to a page that looks logged out.
+
+---
+
+# Billing reconciliation
+
+`/api/sync` asks Stripe what the subscription actually is and writes it, rather
+than waiting to be told by a webhook.
+
+Webhooks fail for ordinary reasons: a signing secret from the wrong Stripe mode,
+an endpoint created in test while the keys are live, an event type left
+unticked, a deploy between the payment and the callback. Any of those leaves a
+paying customer looking unsubscribed with no way to fix it themselves — and no
+error anywhere, because nothing went wrong from the app's point of view.
+
+Sync runs in three places:
+
+1. **On the checkout return**, alongside the webhook poll. Whichever answers
+   first wins.
+2. **On load**, once, for a signed-in account showing no plan. Someone who paid
+   yesterday and comes back today gets reconciled before being shown a trial
+   prompt.
+3. **From Settings → Refresh subscription**, so a customer can fix it without
+   emailing you.
+
+It matches by `stripe_customer_id` when known, otherwise by email. A live
+subscription always wins over a cancelled one. `trial_used` is set to 999 on
+sync, so reconciling can never hand out a second free trial.
+
+The webhook is still worth configuring — it is instant and sync is not — but it
+is now an optimisation rather than a dependency.
+
+## If someone is still showing as unsubscribed
+
+Settings → Refresh subscription tells you which layer is broken:
+
+- **"No Stripe customer for this email yet"** — the email on the WhyViral
+  account differs from the one used at checkout
+- **"Stripe has no subscription for this account"** — checkout did not complete,
+  or it completed in the other Stripe mode
+- **"Updated — trial active"** — it worked; the webhook was the problem

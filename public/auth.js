@@ -160,7 +160,7 @@ const WV_AUTH = (function () {
     if (errCode) {
       history.replaceState(null, '', location.pathname + location.search);
       return errCode === 'otp_expired'
-        ? 'That link had already been used or expired. Email scanners often open links before you do — use the 6-digit code instead.'
+        ? 'That link has expired or was already used. Enter your email below and tap Forgot to get a fresh one.'
         : (p.get('error_description') || 'Sign-in failed.').replace(/\+/g, ' ');
     }
 

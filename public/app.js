@@ -672,22 +672,18 @@ function routeFromHash() {
 (async function bootAccount() {
   const deepLink = routeFromHash();
   const result = WV_AUTH.captureRedirect();
-  if (result === 'signed-in') {
-    WV_AUTH.invalidate();
-    toast('Signed in');
-  } else if (typeof result === 'string' && result) {
-    /* A dead magic link used to leave a blank page. Say what happened and
-       put them straight back into the code flow. */
-    show('auth');
-    showErr('#auth-error', result);
-  }
+  if (result === 'signed-in') { WV_AUTH.invalidate(); toast('Signed in'); }
   const acct = await refreshAccount();
 
-  if (result === 'recovery') {
+  if (typeof result === 'string' && result && result !== 'signed-in' && result !== 'recovery') {
+    /* Expired or already-used link. Put them on sign-in with a way forward. */
+    show('auth');
+    showErr('#auth-error', result);
+  } else if (result === 'recovery') {
     /* Arrived from a reset link: they hold a temporary session, so send them
        straight to choosing a new password. */
     show('reset');
-  } else if (deepLink && !(typeof result === 'string' && result)) {
+  } else if (deepLink) {
     if (deepLink === 'paywall') renderPaywall(null, acct);
     show(deepLink);
   }

@@ -15,6 +15,18 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site.css">
+<script>
+  /* Supabase sends auth returns to the project's Site URL, which is the root.
+     Anything carrying an auth fragment belongs in the app, so hand it straight
+     over rather than rendering a marketing page the person did not ask for.
+     Runs before paint so there is no flash of the wrong page. */
+  (function () {
+    var h = window.location.hash || '';
+    if (/(^|[#&])(access_token|error_code|error_description|type)=/.test(h)) {
+      window.location.replace('/app.html' + h);
+    }
+  })();
+</script>
 </head>
 <body>
 

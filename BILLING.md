@@ -314,3 +314,31 @@ The usual causes:
 - "Password should be at least 6 characters" — Supabase has its own minimum
 - Nothing at all — check the browser console; a CORS or URL error means the
   Supabase URL in `public/app.html` is wrong
+
+## Supabase redirect URLs — required
+
+**Authentication → URL Configuration**
+
+- Site URL: `https://whyviral.io`
+- Redirect URLs, add all of these:
+  - `https://whyviral.io/**`
+  - `https://whyviral.io/app.html**`
+  - `https://whyviral.vercel.app/**`
+
+Supabase only honours a `redirect_to` that matches an entry in that list.
+Anything else silently falls back to the Site URL — which is why a reset link
+landed on the marketing homepage with an error fragment and nothing happened.
+
+The site now forwards any auth fragment from `/` to `/app.html` before it
+paints, so resets work even if this list is wrong. Set it anyway: the redirect
+is one less hop and one less thing to explain.
+
+## If a reset link says expired
+
+- It was already used — each link works once
+- It sat longer than the OTP expiry (Authentication → Providers → Email)
+- Something opened it first. Rarer for resets than for sign-in links, but it
+  happens on corporate mail
+
+Whatever the cause, the person now lands on the sign-in card with a message
+telling them to request a fresh one, instead of a homepage with a broken URL.

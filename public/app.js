@@ -449,7 +449,8 @@ function renderHistory() {
     top.appendChild(el('h3', null, r.topic || 'Untitled'));
     top.appendChild(el('span', 'when', new Date(r.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })));
     b.appendChild(top);
-    b.appendChild(el('p', 'sum', `${r.videoCount} videos · ${r.findings.length} shared traits · ${r.confidence} confidence`));
+    const nf = r.findings.length;
+    b.appendChild(el('p', 'sum', `${r.videoCount} videos · ${nf} shared trait${nf === 1 ? '' : 's'} · ${r.confidence} confidence`));
     b.onclick = () => { current = r; scriptCount = 3; renderResult(r); show('result'); };
     list.appendChild(b);
   });
@@ -723,9 +724,11 @@ if (suBtn) suBtn.onclick = async () => {
     await WV_AUTH.saveProfile({ fullName: name }).catch(() => {});
     WV_AUTH.invalidate();
     const acct = await refreshAccount();
+  const landing = acct.signedIn ? 'home' : 'welcome';
     toast('Account created');
     renderPaywall(null, acct);
-    show(acct.subscribed ? 'welcome' : 'paywall');
+    renderDashboard(acct);
+    show(acct.subscribed ? 'home' : 'paywall');
   } catch (e) {
     const msg = String(e.message || e);
     /* Surface what Supabase actually said. A generic failure here is the
@@ -762,7 +765,8 @@ if (siBtn) siBtn.onclick = async () => {
       return;
     }
     toast('Signed in');
-    show('welcome');
+    renderDashboard(acct);
+    show('home');
   } catch (e) {
     showErr('#auth-error', 'Wrong email or password.');
     siBtn.disabled = false;
@@ -806,6 +810,32 @@ $('#go-signup')?.addEventListener('click', e => { e.preventDefault(); show('sign
 $('#si-pass')?.addEventListener('keydown', e => { if (e.key === 'Enter') siBtn.click(); });
 $('#su-pass2')?.addEventListener('keydown', e => { if (e.key === 'Enter') suBtn.click(); });
 $('#rp-pass2')?.addEventListener('keydown', e => { if (e.key === 'Enter') rpBtn.click(); });
+
+/* Plan choice on the paywall. This block was lost in an earlier rewrite, which
+   left chosenPlan undeclared and the toggle inert — Subscribe threw before it
+   ever reached checkout. */
+let chosenPlan = 'monthly';
+document.querySelectorAll('.plan-opt').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.plan-opt').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    chosenPlan = b.dataset.plan || 'monthly';
+  });
+});
+
+const payManage = $('#paywall-manage');
+if (payManage) payManage.onclick = async () => {
+  payManage.disabled = true;
+  try {
+    const r = await WV_AUTH.apiFetch('/api/portal', { method: 'POST' });
+    const j = await r.json();
+    if (j.url) { location.href = j.url; return; }
+    throw new Error(j.message || 'Billing portal unavailable.');
+  } catch (e) {
+    showErr('#paywall-error', String(e.message || e));
+    payManage.disabled = false;
+  }
+};
 
 const payGo = $('#paywall-go');
 if (payGo) payGo.onclick = async () => {
@@ -852,9 +882,179 @@ function routeFromHash() {
   } else if (deepLink) {
     if (deepLink === 'paywall') renderPaywall(null, acct);
     show(deepLink);
+  } else if (acct.signedIn) {
+    /* Signed in: the workspace, not the pitch. */
+    renderDashboard(acct);
+    show('home');
   }
 
   /* Reveal only once routing has decided, so the welcome screen never flashes
      before the sign-up form it was supposed to show. */
   document.body.classList.remove('booting');
 })();
+
+/* ================= dashboard ================= */
+/* Signed-in people get a workspace, not a pitch. The primary action sits on
+   the page itself so the common case is zero clicks away. */
+
+const QMAX = 5;
+let qrows = [];
+
+function qAdd(value = '') {
+  if (qrows.length >= QMAX) return;
+  const row = el('div', 'qrow');
+  row.innerHTML = '<span class="n"></span><input type="text" placeholder="Paste a TikTok link" autocomplete="off" spellcheck="false"><button class="rm" aria-label="Remove">×</button>';
+  const inp = row.querySelector('input');
+  inp.value = value;
+  inp.addEventListener('input', () => { inp.classList.toggle('ok', isTikTok(inp.value.trim())); qCount(); });
+  row.querySelector('.rm').onclick = () => {
+    if (qrows.length <= 1) { inp.value = ''; inp.classList.remove('ok'); qCount(); return; }
+    qrows = qrows.filter(r => r !== row); row.remove(); qCount();
+  };
+  $('#quick-links').appendChild(row);
+  qrows.push(row);
+  qCount();
+}
+function qCount() {
+  qrows.forEach((r, i) => r.querySelector('.n').textContent = i + 1);
+  const filled = qrows.filter(r => isTikTok(r.querySelector('input').value.trim())).length;
+  const hint = $('#launch-count');
+  if (hint) hint.textContent = `${filled} of ${QMAX} links`;
+  const add = $('#quick-add');
+  if (add) add.hidden = qrows.length >= QMAX;
+}
+if ($('#quick-links')) { for (let i = 0; i < 3; i++) qAdd(); }
+$('#quick-add')?.addEventListener('click', () => qAdd());
+
+/* Hand the dashboard's inputs to the existing analysis screen and run it, so
+   there is one code path for analysis rather than two that can drift. */
+$('#quick-go')?.addEventListener('click', () => {
+  const topic = ($('#quick-topic').value || '').trim();
+  const links = qrows.map(r => r.querySelector('input').value.trim()).filter(Boolean);
+  const err = $('#quick-error');
+  err.hidden = true;
+  if (!topic) { err.textContent = 'Name the product first — the scripts are built around it.'; err.hidden = false; $('#quick-topic').focus(); return; }
+  if (links.filter(isTikTok).length < 3) { err.textContent = 'Add at least 3 TikTok links. The method needs videos to compare.'; err.hidden = false; return; }
+
+  $('#topic').value = topic;
+  while (rows.length < links.length) addRow();
+  rows.forEach((r, i) => {
+    const inp = r.querySelector('input');
+    inp.value = links[i] || '';
+    inp.dispatchEvent(new Event('input'));
+  });
+  $('#start-analysis').click();
+});
+
+function renderDashboard(s) {
+  const greet = $('#dash-greet');
+  if (greet) {
+    const h = new Date().getHours();
+    const when = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+    greet.textContent = s.name ? `${when}, ${s.name.split(' ')[0]}` : when;
+  }
+
+  const hist = readHistory();
+  const sub = $('#dash-sub');
+  if (sub) sub.textContent = hist.length ? 'What are we breaking down next?' : 'Paste three viral videos to begin.';
+
+  const stats = $('#dash-stats');
+  if (stats) {
+    stats.innerHTML = '';
+    const scripts = hist.reduce((n, r) => n + (r.findings?.length ? 1 : 0), 0);
+    [[hist.length, hist.length === 1 ? 'breakdown' : 'breakdowns'],
+     [hist.reduce((n, r) => n + (r.videoCount || 0), 0), 'videos read'],
+     [scripts, 'patterns found']].forEach(([n, l]) => {
+      const d = el('div', 'dash-stat');
+      d.appendChild(el('b', null, String(n)));
+      d.appendChild(el('span', null, l));
+      stats.appendChild(d);
+    });
+  }
+
+  const wrap = $('#recent-wrap'), list = $('#recent-list');
+  if (wrap && list) {
+    list.innerHTML = '';
+    hist.slice(0, 3).forEach(r => {
+      const b = el('button', 'recent-item');
+      const left = el('div');
+      left.appendChild(el('div', 't', r.topic || 'Untitled'));
+      const n = r.findings.length;
+      left.appendChild(el('div', 'm', `${r.videoCount} videos · ${n} shared trait${n === 1 ? '' : 's'} · ${r.confidence} confidence`));
+      b.appendChild(left);
+      b.appendChild(el('span', 'when', new Date(r.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })));
+      b.onclick = () => { current = r; renderResult(r); show('result'); };
+      list.appendChild(b);
+    });
+    wrap.hidden = hist.length === 0;
+  }
+}
+
+$('#tool-history')?.addEventListener('click', () => { renderHistory(); show('history'); });
+$('#recent-all')?.addEventListener('click', () => { renderHistory(); show('history'); });
+$('#tool-hooks')?.addEventListener('click', () => {
+  const hist = readHistory();
+  if (!hist.length) { toast('Run a breakdown first — hooks are built from one.'); return; }
+  current = hist[0];
+  scriptCount = Math.max(scriptCount, 4);
+  renderResult(current);
+  $('#build-scripts').click();
+});
+
+/* ---- score a draft ----
+   The retention loop: check your own writing against a pattern you already
+   trust. Runs entirely on the existing engine, no extra API cost. */
+$('#tool-score')?.addEventListener('click', () => {
+  const hist = readHistory();
+  if (!hist.length) { toast('Run a breakdown first — scoring compares against one.'); return; }
+  const sel = $('#score-source');
+  sel.innerHTML = '';
+  hist.forEach((r, i) => {
+    const o = document.createElement('option');
+    o.value = String(i);
+    o.textContent = `${r.topic || 'Untitled'} · ${new Date(r.createdAt).toLocaleDateString()}`;
+    sel.appendChild(o);
+  });
+  $('#score-out').innerHTML = '';
+  $('#score-text').value = '';
+  show('score');
+});
+
+$('#score-go')?.addEventListener('click', () => {
+  const hist = readHistory();
+  const r = hist[Number($('#score-source').value || 0)];
+  const text = ($('#score-text').value || '').trim();
+  const err = $('#score-error'); err.hidden = true;
+  if (!r) { err.textContent = 'Pick a breakdown to compare against.'; err.hidden = false; return; }
+  if (text.length < 15) { err.textContent = 'Paste a bit more — at least a sentence.'; err.hidden = false; return; }
+
+  const f = extractFeatures({ url: 'draft', caption: text });
+  const targets = r.findings.slice(0, 8);
+  const hits = targets.map(t => ({ ...t, present: !!f.traits[t.key] }));
+  const got = hits.filter(h => h.present).length;
+  const pct = targets.length ? Math.round((got / targets.length) * 100) : 0;
+
+  const out = $('#score-out');
+  out.innerHTML = '';
+  const head = el('div', 'score-head');
+  const ring = el('div', 'score-ring', `${pct}%`);
+  ring.style.background = pct >= 70 ? 'rgba(143,217,245,.3)' : pct >= 40 ? 'rgba(201,184,255,.32)' : 'rgba(255,61,139,.13)';
+  ring.style.color = pct >= 70 ? 'var(--blue-deep)' : pct >= 40 ? '#4B34A8' : 'var(--pink-deep)';
+  head.appendChild(ring);
+  const txt = el('div');
+  txt.appendChild(el('div', 'score-word', pct >= 70 ? 'Close to the pattern' : pct >= 40 ? 'Halfway there' : 'Off the pattern'));
+  txt.appendChild(el('div', 'score-note', `Your draft hits ${got} of ${targets.length} traits these videos shared. The misses below are the cheapest things to change.`));
+  head.appendChild(txt);
+  out.appendChild(head);
+
+  /* Misses first — that is the part someone can act on. */
+  [...hits.filter(h => !h.present), ...hits.filter(h => h.present)].forEach(h => {
+    const row = el('div', 'hit ' + (h.present ? 'yes' : 'no'));
+    row.appendChild(el('span', 'mark', h.present ? '✓' : '—'));
+    const d = el('div');
+    d.appendChild(el('div', 'l', h.label));
+    if (!h.present) d.appendChild(el('div', 'w', h.why));
+    row.appendChild(d);
+    out.appendChild(row);
+  });
+});

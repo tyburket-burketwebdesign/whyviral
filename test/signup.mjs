@@ -101,7 +101,7 @@ $('#si-submit').click(); await sleep(200);
 check('wrong password rejected', /wrong email or password/i.test($('#auth-error').textContent));
 $('#si-pass').value = 'correct-horse';
 $('#si-submit').click(); await sleep(250);
-check('correct password signs in', $('#screen-welcome').classList.contains('active'));
+check('correct password lands on the dashboard', $('#screen-home').classList.contains('active'));
 
 $('#go-signup')?.click(); await sleep(60);
 check('can switch back to sign-up', $('#screen-signup').classList.contains('active'));

@@ -62,8 +62,6 @@
 
   <!-- ===== WELCOME ===== -->
   <section class="screen active" id="screen-welcome">
-    <div class="status-bar" id="status-bar" hidden></div>
-
     <div class="hero">
       <div class="hero-copy">
         <p class="eyebrow">Reverse-engineer the winners</p>
@@ -222,6 +220,78 @@
     <h2 id="scripts-title">Your scripts</h2>
     <p class="lede sm">Each one uses the pattern above through a different angle, so you can post several without repeating yourself.</p>
     <div id="scripts"></div>
+  </section>
+
+  <!-- ===== DASHBOARD (signed in) ===== -->
+  <section class="screen" id="screen-home">
+    <div class="dash-head">
+      <div>
+        <p class="dash-greet" id="dash-greet">Welcome back</p>
+        <h2 id="dash-sub">What are we breaking down today?</h2>
+      </div>
+      <div class="dash-stats" id="dash-stats"></div>
+    </div>
+
+    <div class="status-bar" id="status-bar" hidden></div>
+
+    <!-- Primary action, inline. No click required to reach the thing they came for. -->
+    <div class="launch">
+      <div class="launch-top">
+        <span class="launch-kicker">New breakdown</span>
+        <span class="launch-hint" id="launch-count">0 of 5 links</span>
+      </div>
+      <input type="text" id="quick-topic" placeholder="What product? e.g. Sol de Janeiro Cheirosa 62" autocomplete="off">
+      <div id="quick-links"></div>
+      <div class="launch-actions">
+        <button class="btn btn-quiet btn-sm" id="quick-add">Add another link</button>
+        <button class="btn btn-primary" id="quick-go">Start breakdown</button>
+      </div>
+      <p class="error" id="quick-error" hidden></p>
+    </div>
+
+    <div class="tool-grid">
+      <button class="tool" id="tool-score">
+        <span class="tool-k">Score</span>
+        <h3>Score a draft</h3>
+        <p>Paste a caption or script you've written and see which of the winning traits it actually hits.</p>
+      </button>
+      <button class="tool" id="tool-hooks">
+        <span class="tool-k">Hooks</span>
+        <h3>Hook lab</h3>
+        <p>Generate fresh opening lines from a breakdown you've already run.</p>
+      </button>
+      <button class="tool" id="tool-history">
+        <span class="tool-k">Library</span>
+        <h3>Your breakdowns</h3>
+        <p>Everything you've analysed, saved and searchable.</p>
+      </button>
+    </div>
+
+    <div class="recent" id="recent-wrap" hidden>
+      <div class="recent-head"><h3>Pick up where you left off</h3><button class="ghost-btn" id="recent-all">See all</button></div>
+      <div id="recent-list"></div>
+    </div>
+  </section>
+
+  <!-- ===== SCORE A DRAFT ===== -->
+  <section class="screen" id="screen-score">
+    <button class="back" data-back="home">Back</button>
+    <h2>Score a draft</h2>
+    <p class="lede sm">Paste what you've written. We'll check it against the pattern from one of your breakdowns.</p>
+
+    <label class="field">
+      <span class="field-label">Compare against</span>
+      <select id="score-source" class="select"></select>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Your caption or script</span>
+      <textarea id="score-text" rows="7" placeholder="Stop scrolling if you own this…"></textarea>
+    </label>
+
+    <p class="error" id="score-error" hidden></p>
+    <button class="btn btn-primary btn-block" id="score-go">Score it</button>
+    <div id="score-out"></div>
   </section>
 
   <!-- ===== CREATE ACCOUNT ===== -->

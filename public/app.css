@@ -611,3 +611,102 @@ body.booting .screen{display:none !important}
 /* Layout helpers referenced by markup that had no rule of their own. */
 .hero-copy{min-width:0}
 .result-main{min-width:0}
+
+/* ================= dashboard ================= */
+.dash-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:22px}
+.dash-greet{
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--pink-deep);margin-bottom:8px;
+}
+#dash-sub{font-size:clamp(24px,3.4vw,32px);letter-spacing:-.035em;line-height:1.15}
+.dash-stats{display:flex;gap:22px}
+.dash-stat{text-align:right}
+.dash-stat b{display:block;font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:500;letter-spacing:-.02em}
+.dash-stat span{display:block;font-size:12px;color:var(--ink-3);margin-top:1px}
+@media(max-width:620px){.dash-stats{display:none}}
+
+/* The main action, always one field away. */
+.launch{
+  background:var(--paper);border:1px solid var(--line);border-radius:16px;
+  padding:20px;box-shadow:var(--shadow);margin-bottom:26px;
+}
+.launch-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.launch-kicker{
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--pink-deep);
+}
+.launch-hint{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-4)}
+.launch input[type=text]{
+  width:100%;font-family:inherit;font-size:16px;color:var(--ink);background:var(--cream);
+  border:1px solid var(--line);border-radius:10px;padding:13px 14px;margin-bottom:9px;
+}
+.launch input[type=text]:focus{border-color:var(--pink);outline:none;box-shadow:0 0 0 3.5px rgba(255,61,139,.12);background:var(--paper)}
+.qrow{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.qrow .n{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink-4);width:14px;flex:0 0 14px}
+.qrow input{
+  flex:1;font-family:inherit;font-size:14.5px;color:var(--ink);background:var(--cream);
+  border:1px solid var(--line);border-radius:9px;padding:11px 12px;min-width:0;
+}
+.qrow input:focus{border-color:var(--pink);outline:none;box-shadow:0 0 0 3px rgba(255,61,139,.12);background:var(--paper)}
+.qrow input.ok{border-color:var(--blue)}
+.qrow .rm{background:none;border:0;color:var(--ink-4);font-size:17px;cursor:pointer;padding:2px 5px;line-height:1}
+.qrow .rm:hover{color:var(--pink)}
+.launch-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+
+/* Tools */
+.tool-grid{display:grid;gap:12px;margin-bottom:26px}
+@media(min-width:720px){.tool-grid{grid-template-columns:repeat(3,1fr)}}
+.tool{
+  text-align:left;font-family:inherit;background:var(--paper);border:1px solid var(--line);
+  border-radius:14px;padding:20px 18px;cursor:pointer;
+  transition:border-color .14s,transform .14s,box-shadow .16s;
+}
+.tool:hover{border-color:var(--pink);transform:translateY(-2px);box-shadow:0 14px 30px -22px rgba(20,18,32,.4)}
+.tool-k{
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--pink-deep);display:block;margin-bottom:10px;
+}
+.tool h3{font-size:16px;margin-bottom:6px;letter-spacing:-.02em}
+.tool p{font-size:13.5px;color:var(--ink-3);line-height:1.55}
+
+/* Recents */
+.recent-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.recent-item{
+  display:flex;justify-content:space-between;align-items:center;gap:14px;width:100%;
+  font-family:inherit;text-align:left;background:var(--paper);border:1px solid var(--line-2);
+  border-radius:11px;padding:13px 15px;margin-bottom:8px;cursor:pointer;
+}
+.recent-item:hover{border-color:var(--blue)}
+.recent-item .t{font-size:14.5px;font-weight:500;letter-spacing:-.01em}
+.recent-item .m{font-size:12.5px;color:var(--ink-3);margin-top:2px}
+.recent-item .when{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-4);white-space:nowrap}
+
+/* Score a draft */
+.select{
+  width:100%;font-family:inherit;font-size:15px;color:var(--ink);background:var(--paper);
+  border:1px solid var(--line);border-radius:10px;padding:12px 13px;
+}
+.score-head{
+  display:flex;align-items:center;gap:16px;background:var(--paper);border:1px solid var(--line);
+  border-radius:14px;padding:18px;margin:20px 0 14px;
+}
+.score-ring{
+  width:64px;height:64px;border-radius:50%;flex:0 0 64px;display:grid;place-items:center;
+  font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:500;
+}
+.score-word{font-size:16px;font-weight:600;letter-spacing:-.02em}
+.score-note{font-size:13.5px;color:var(--ink-3);margin-top:3px;line-height:1.5}
+.hit{display:flex;gap:10px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line-2)}
+.hit .mark{
+  width:18px;height:18px;border-radius:50%;flex:0 0 18px;margin-top:1px;display:grid;
+  place-items:center;font-size:11px;font-weight:700;color:#fff;
+}
+.hit.yes .mark{background:var(--blue-deep)}
+.hit.no .mark{background:var(--ink-4)}
+.hit .l{font-size:14px;line-height:1.4}
+.hit .w{font-size:12.5px;color:var(--ink-3);margin-top:2px;line-height:1.5}
+
+/* Tool cards keep a common baseline regardless of how their copy wraps. */
+.tool-grid{align-items:stretch}
+.tool{display:flex;flex-direction:column}
+.tool p{margin-top:auto}

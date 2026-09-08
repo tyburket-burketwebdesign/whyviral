@@ -10,35 +10,66 @@ const b64urlToBytes = (s) => {
 
 const bytesToText = (b) => new TextDecoder().decode(b);
 
-/* Constant-time-ish compare. Web Crypto's verify does the real work; this is
-   only used for the pre-check on segment counts. */
-function timingSafeEqual(a, b) {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
-  return diff === 0;
+/* JWKS cache. Supabase projects created recently sign tokens with an ECC key
+   pair (ES256) rather than a shared secret, so the public key has to be fetched
+   and cached rather than read from an env var. */
+let _jwks = { keys: null, at: 0 };
+
+async function getJwks(supabaseUrl) {
+  if (_jwks.keys && Date.now() - _jwks.at < 600000) return _jwks.keys;
+  try {
+    const res = await fetch(`${supabaseUrl}/auth/v1/.well-known/jwks.json`);
+    if (!res.ok) return _jwks.keys;
+    const body = await res.json();
+    if (Array.isArray(body?.keys)) { _jwks = { keys: body.keys, at: Date.now() }; }
+    return _jwks.keys;
+  } catch { return _jwks.keys; }
 }
 
+const ALGS = {
+  ES256: { name: 'ECDSA', namedCurve: 'P-256', verify: { name: 'ECDSA', hash: 'SHA-256' } },
+  RS256: { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256', verify: { name: 'RSASSA-PKCS1-v1_5' } },
+};
+
 /* Verify a Supabase access token. Returns the claims, or null.
-   Never throws — a malformed token from the internet is expected input. */
-export async function verifyToken(token, secret) {
-  if (!token || !secret) return null;
+   Handles both signing models: HS256 with the project's JWT secret, and
+   ES256/RS256 against the published JWKS. Never throws — a malformed token
+   from the internet is expected input. */
+export async function verifyToken(token, secret, supabaseUrl) {
+  if (!token) return null;
   const parts = token.split('.');
   if (parts.length !== 3) return null;
-
   const [headB64, bodyB64, sigB64] = parts;
+
   try {
     const header = JSON.parse(bytesToText(b64urlToBytes(headB64)));
-    if (header.alg !== 'HS256') return null;   // don't accept alg:none or RS256 downgrade
+    const signed = new TextEncoder().encode(`${headB64}.${bodyB64}`);
+    const sig = b64urlToBytes(sigB64);
+    let ok = false;
 
-    const key = await crypto.subtle.importKey(
-      'raw', new TextEncoder().encode(secret),
-      { name: 'HMAC', hash: 'SHA-256' }, false, ['verify'],
-    );
-    const ok = await crypto.subtle.verify(
-      'HMAC', key, b64urlToBytes(sigB64),
-      new TextEncoder().encode(`${headB64}.${bodyB64}`),
-    );
+    if (header.alg === 'HS256') {
+      if (!secret) return null;
+      const key = await crypto.subtle.importKey(
+        'raw', new TextEncoder().encode(secret),
+        { name: 'HMAC', hash: 'SHA-256' }, false, ['verify'],
+      );
+      ok = await crypto.subtle.verify('HMAC', key, sig, signed);
+    } else if (ALGS[header.alg]) {
+      if (!supabaseUrl) return null;
+      const keys = await getJwks(supabaseUrl);
+      if (!keys) return null;
+      const jwk = keys.find(k => k.kid === header.kid) || keys[0];
+      if (!jwk) return null;
+      const spec = ALGS[header.alg];
+      const key = await crypto.subtle.importKey('jwk', jwk,
+        spec.name === 'ECDSA' ? { name: 'ECDSA', namedCurve: spec.namedCurve }
+                              : { name: spec.name, hash: spec.hash },
+        false, ['verify']);
+      ok = await crypto.subtle.verify(spec.verify, key, sig, signed);
+    } else {
+      return null;   /* alg:none and anything unrecognised */
+    }
+
     if (!ok) return null;
 
     const claims = JSON.parse(bytesToText(b64urlToBytes(bodyB64)));

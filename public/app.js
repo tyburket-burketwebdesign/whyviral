@@ -750,7 +750,17 @@ if (siBtn) siBtn.onclick = async () => {
     await WV_AUTH.signIn(email, pass);
     await WV_AUTH.flushProfile();
     WV_AUTH.invalidate();
-    await refreshAccount();
+    const acct = await refreshAccount();
+
+    /* Supabase accepted the password but our API refused the token. Almost
+       always a JWT configuration mismatch — say so rather than bouncing the
+       person back to a page that still says "Sign in". */
+    if (acct.rejected || !acct.signedIn) {
+      showErr('#auth-error', 'Signed in, but the server would not accept the session. Check SUPABASE_JWT_SECRET matches your project.');
+      siBtn.disabled = false;
+      siBtn.textContent = 'Sign in';
+      return;
+    }
     toast('Signed in');
     show('welcome');
   } catch (e) {

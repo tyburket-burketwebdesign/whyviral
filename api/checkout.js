@@ -20,7 +20,7 @@ async function onRequest({ request, env }) {
 
   /* Subscriptions attach to an email, so sign-in comes first. */
   const token = bearerFrom(request);
-  const claims = token ? await verifyToken(token, env.SUPABASE_JWT_SECRET) : null;
+  const claims = token ? await verifyToken(token, env.SUPABASE_JWT_SECRET, env.SUPABASE_URL) : null;
   if (!claims) return json({ error: 'signin_required', message: 'Sign in first so we can attach your subscription.' }, 401);
 
   const url = new URL(request.url);

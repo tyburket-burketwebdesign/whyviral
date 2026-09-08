@@ -374,3 +374,28 @@ one anyway.
 
 **Examples** across the site now use products this audience actually searches —
 Rhode, Sol de Janeiro, Dyson Airwrap — rather than an Apple Pencil.
+
+---
+
+# JWT signing: two models
+
+Supabase signs access tokens one of two ways, and which one you get depends on
+when the project was created.
+
+**Older projects** use HS256 with a shared secret. Put it in
+`SUPABASE_JWT_SECRET` (Settings → API → JWT Settings).
+
+**Current projects** use asymmetric keys (ES256). There is no shared secret —
+the public key is published at
+`https://<project>.supabase.co/auth/v1/.well-known/jwks.json`, and the API
+fetches and caches it for ten minutes.
+
+Both are supported. `SUPABASE_URL` is required either way, because it is where
+the JWKS lives. `SUPABASE_JWT_SECRET` is only needed for the HS256 case and can
+be left unset on a modern project.
+
+This was the cause of "sign in appears to work but the app still says Sign in":
+Supabase happily issued an ES256 token, the API only understood HS256, rejected
+it, and reported the person as signed out with no error anywhere. If it ever
+happens again the sign-in form now says so explicitly instead of bouncing back
+to a page that looks logged out.

@@ -19,7 +19,11 @@ function boot() {
   window.addEventListener('error', e => errs.push(e.message));
   window.fetch = async (u, init = {}) => {
     const s = String(u);
-    if (s.startsWith('/api/account')) return { ok: true, status: 200, json: async () => ({ billing: true, signedIn: false, plan: 'free', status: 'none', subscribed: false, remaining: 0, trialMode: 'card', trialDays: 7 }) };
+    if (s.startsWith('/api/account')) {
+      /* Mirror the real API: signed in only when a token is attached. */
+      const signedIn = !!(init.headers && init.headers.authorization);
+      return { ok: true, status: 200, json: async () => ({ billing: true, signedIn, email: signedIn ? 'charley@whyviral.io' : null, name: signedIn ? 'Charley Smith' : null, plan: 'free', status: 'none', subscribed: false, remaining: 0, trialMode: 'card', trialDays: 7 }) };
+    }
     if (s.includes('/auth/v1/signup')) {
       calls.signup++;
       const b = JSON.parse(init.body);

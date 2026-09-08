@@ -13,7 +13,7 @@ async function onRequest({ request, env }) {
   if (!env.STRIPE_SECRET_KEY) return json({ error: 'not_configured' }, 503);
 
   const token = bearerFrom(request);
-  const claims = token ? await verifyToken(token, env.SUPABASE_JWT_SECRET) : null;
+  const claims = token ? await verifyToken(token, env.SUPABASE_JWT_SECRET, env.SUPABASE_URL) : null;
   if (!claims) return json({ error: 'signin_required' }, 401);
 
   const url = new URL(request.url);

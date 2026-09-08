@@ -6,7 +6,7 @@
   "description": "Paste 3-5 viral TikToks about one product. Get the pattern they share, then scripts built on it.",
   "scripts": {
     "dev": "npx vercel dev",
-    "test": "node test/audit.mjs && node test/globals.mjs && node test/run-tests.mjs && node test/comments.mjs && node test/enriched.mjs && node test/provider.mjs && node test/gate.mjs && node test/stripe.mjs && node test/abuse.mjs && node test/profile.mjs && node test/account-api.mjs && node test/api.mjs && node test/stress.mjs",
+    "test": "node test/audit.mjs && node test/globals.mjs && node test/run-tests.mjs && node test/comments.mjs && node test/enriched.mjs && node test/provider.mjs && node test/jwt.mjs && node test/gate.mjs && node test/stripe.mjs && node test/abuse.mjs && node test/profile.mjs && node test/account-api.mjs && node test/api.mjs && node test/stress.mjs",
     "test:ui": "node test/ui-test.mjs && node test/ui-enriched.mjs && node test/signup.mjs && node test/reset.mjs && node test/account-ui.mjs && node test/root-forward.mjs && node test/auth-expired.mjs && node test/deeplink.mjs",
     "test:all": "npm test && npm run test:ui",
     "audit": "node test/audit.mjs"

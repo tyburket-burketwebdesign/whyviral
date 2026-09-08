@@ -21,7 +21,7 @@ export async function checkAccess(env, request) {
   const url = new URL(request.url);
   const deviceId = (url.searchParams.get('device') || request.headers.get('x-device-id') || '').slice(0, 64) || null;
   const token = bearerFrom(request);
-  const claims = token ? await verifyToken(token, env.SUPABASE_JWT_SECRET) : null;
+  const claims = token ? await verifyToken(token, env.SUPABASE_JWT_SECRET, env.SUPABASE_URL) : null;
 
   /* A token that was sent but did not verify is a hard stop. Silently falling
      back to anonymous would let an expired or forged token buy free analyses. */

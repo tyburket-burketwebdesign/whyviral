@@ -194,6 +194,12 @@ const WV_AUTH = (function () {
     try {
       const r = await apiFetch('/api/account');
       cached = await r.json();
+      /* A token the server refuses is worse than no token: the person believes
+         they are signed in and nothing works. Clear it and say so. */
+      if (cached && cached.error === 'bad_token') {
+        writeSession(null);
+        cached.rejected = true;
+      }
     } catch {
       cached = { billing: false, signedIn: false, plan: 'open', remaining: null };
     }

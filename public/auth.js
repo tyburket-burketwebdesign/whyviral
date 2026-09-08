@@ -108,6 +108,22 @@ const WV_AUTH = (function () {
 
   /* Save the sign-up profile. Runs after the account exists, so the request
      carries a real token and the server can trust who it belongs to. */
+  const PENDING_KEY = 'whyviral.pending_profile.v1';
+
+  /* Hold a profile that could not be saved yet because sign-up returned no
+     session. Small and local; cleared as soon as it is written. */
+  function stashProfile(p) {
+    try { localStorage.setItem(PENDING_KEY, JSON.stringify(p)); } catch {}
+  }
+
+  async function flushProfile() {
+    let p = null;
+    try { p = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null'); } catch {}
+    if (!p) return false;
+    try { await saveProfile(p); localStorage.removeItem(PENDING_KEY); return true; }
+    catch { return false; }
+  }
+
   async function saveProfile(profile) {
     const r = await apiFetch('/api/profile', {
       method: 'POST',
@@ -169,7 +185,7 @@ const WV_AUTH = (function () {
   }
 
   return {
-    deviceId, currentSession, signUp, signIn, sendReset, saveProfile, captureRedirect, signOut,
+    deviceId, currentSession, signUp, signIn, sendReset, saveProfile, stashProfile, flushProfile, captureRedirect, signOut,
     apiFetch, status, configured,
     invalidate: () => { cached = null; },
     isSignedIn: async () => !!(await currentSession()),

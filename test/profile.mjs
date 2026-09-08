@@ -94,5 +94,43 @@ await req({ fullName: 'Kid Smith', birthdate: dobFor(12) });
 check('nothing written for an underage attempt', patched === null);
 
 globalThis.fetch = realFetch;
+console.log('\n--- accounts are not created by page loads ---');
+const { resolveAccount } = await import('../api/_auth.js');
+let inserts = 0;
+globalThis.fetch = async (u, init = {}) => {
+  const s = String(u);
+  if (s.includes('/accounts')) {
+    if ((init.method || 'GET') === 'POST') { inserts++; return { ok: true, status: 200, json: async () => [{ id: 'new', device_id: 'd9' }] }; }
+    return { ok: true, status: 200, json: async () => [] };   /* nothing exists yet */
+  }
+  return { ok: true, status: 200, json: async () => [] };
+};
+const E = { SUPABASE_URL: 'x', SUPABASE_SERVICE_KEY: 'y' };
+
+let acc = await resolveAccount(E, { claims: null, deviceId: 'd9' });
+check('anonymous lookup creates nothing by default', acc === null && inserts === 0, `inserts ${inserts}`);
+
+acc = await resolveAccount(E, { claims: null, deviceId: 'd9', create: true });
+check('creates only when asked', !!acc && inserts === 1, `inserts ${inserts}`);
+
+inserts = 0;
+await resolveAccount(E, { claims: null, deviceId: null });
+check('no device id creates nothing', inserts === 0);
+
+console.log('\n--- card mode blocks anonymous without touching the database ---');
+const { checkAccess } = await import('../api/_gate.js');
+inserts = 0;
+let reads = 0;
+globalThis.fetch = async (u, init = {}) => {
+  reads++;
+  return { ok: true, status: 200, json: async () => [] };
+};
+const res = await checkAccess({ ...E, SUPABASE_JWT_SECRET: 'jwt', TRIAL_MODE: 'card' },
+  new Request('https://whyviral.io/api/enrich?url=x&device=d9'));
+check('anonymous blocked in card mode', !res.allowed && res.reason === 'signup_required');
+check('database never queried for that', reads === 0, `reads ${reads}`);
+
+globalThis.fetch = realFetch;
+
 console.log(`\n--- ${pass} passed, ${fail} failed ---`);
 process.exit(fail ? 1 : 0);

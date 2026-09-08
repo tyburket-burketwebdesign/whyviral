@@ -90,7 +90,7 @@ export const dbPatch = (env, path, patch) =>
    Anonymous  -> keyed on a device id from the browser. Spoofable by design;
                  it only guards free-tier counting, and IP rate limiting sits
                  in front of it. */
-export async function resolveAccount(env, { claims, deviceId }) {
+export async function resolveAccount(env, { claims, deviceId, create = false }) {
   if (claims) {
     const uid = claims.sub;
     const email = claims.email || null;
@@ -122,6 +122,10 @@ export async function resolveAccount(env, { claims, deviceId }) {
 
   const found = await dbSelect(env, `/accounts?device_id=eq.${encodeURIComponent(deviceId)}&select=*&limit=1`);
   if (found?.length) return { ...found[0], anonymous: !found[0].auth_user_id };
+
+  /* Only create on demand. /api/account runs on every page load, so creating
+     here filled the table with empty rows — one per visitor, per browser. */
+  if (!create) return null;
 
   const created = await dbInsert(env, 'accounts', { device_id: deviceId });
   return { ...created[0], anonymous: true };

@@ -73,7 +73,7 @@ async function onRequest({ request, env }) {
 
   const url = new URL(request.url);
   const deviceId = (url.searchParams.get('device') || request.headers.get('x-device-id') || '').slice(0, 64) || null;
-  const account = await resolveAccount(env, { claims, deviceId });
+  const account = await resolveAccount(env, { claims, deviceId, create: true });
   if (!account) return json({ error: 'no_account' }, 400);
 
   const patch = {

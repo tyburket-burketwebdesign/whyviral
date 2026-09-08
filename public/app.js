@@ -545,8 +545,18 @@ if (suBtn) suBtn.onclick = async () => {
   suBtn.textContent = 'Creating your account…';
   try {
     const r = await WV_AUTH.signUp(email, pass);
+
+    /* With "Confirm email" switched on, Supabase returns no session, so there
+       is no token to save the profile with. Rather than lose what they typed,
+       hold it locally and write it the moment they sign in. */
     if (!r.signedIn) {
-      showErr('#su-error', 'Account created. Check your inbox to confirm your email, then sign in.');
+      WV_AUTH.stashProfile({
+        fullName: name, birthdate: dob,
+        phone: phone || null, phoneConsent: sms,
+        consentText: sms ? ($('#su-sms-text').textContent || '').trim() : null,
+        marketingOptIn: $('#su-marketing').checked,
+      });
+      showErr('#su-error', 'Account created. Confirm your email, then sign in — your details are saved.');
       suBtn.textContent = 'Create account';
       return;
     }
@@ -583,6 +593,7 @@ if (siBtn) siBtn.onclick = async () => {
   siBtn.textContent = 'Signing in…';
   try {
     await WV_AUTH.signIn(email, pass);
+    await WV_AUTH.flushProfile();     /* write anything stashed before confirmation */
     WV_AUTH.invalidate();
     await refreshAccount();
     toast('Signed in');

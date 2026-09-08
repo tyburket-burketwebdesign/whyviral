@@ -30,9 +30,18 @@ export async function checkAccess(env, request) {
              message: 'Your session expired. Sign in again.' };
   }
 
+  const mode = (env.TRIAL_MODE || 'free').toLowerCase();
+
+  /* In card mode an anonymous visitor can never be allowed through, so answer
+     before touching the database. Stops a page load from creating a row. */
+  if (mode === 'card' && !claims) {
+    return { allowed: false, reason: 'signup_required', status: 401,
+             message: 'Create an account to start your free trial.' };
+  }
+
   let account;
   try {
-    account = await resolveAccount(env, { claims, deviceId });
+    account = await resolveAccount(env, { claims, deviceId, create: true });
   } catch (e) {
     /* Never let a database blip lock out a paying customer. Fail open on
        infrastructure, closed on entitlement. */
@@ -54,11 +63,7 @@ export async function checkAccess(env, request) {
 
   /* TRIAL_MODE decides how people get in before they pay.
        'card'  — account and card required up front. Stripe runs the trial.
-       'free'  — N analyses with no card, no signup for the first one.
-     One variable, because this is a conversion decision you will want to
-     revisit with real numbers rather than a rewrite. */
-  const mode = (env.TRIAL_MODE || 'free').toLowerCase();
-
+       'free'  — N analyses with no card, no signup for the first one. */
   if (mode === 'card' && !ACTIVE.has(ent.status)) {
     if (!account.email) {
       return { allowed: false, reason: 'signup_required', status: 401,

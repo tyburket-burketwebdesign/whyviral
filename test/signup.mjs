@@ -50,10 +50,7 @@ function fill($, o = {}) {
   $('#su-name').value = o.name ?? 'Charley Smith';
   $('#su-email').value = o.email ?? 'charley@whyviral.io';
   $('#su-pass').value = o.pass ?? 'longenoughpw';
-  $('#su-dob').value = o.dob ?? dobFor(28);
-  $('#su-phone').value = o.phone ?? '';
-  $('#su-sms').checked = !!o.sms;
-  $('#su-marketing').checked = !!o.marketing;
+  $('#su-pass2').value = o.pass2 ?? o.pass ?? 'longenoughpw';
 }
 
 console.log('--- validation ---');
@@ -70,42 +67,20 @@ check('bad email rejected', /email/i.test($('#su-error').textContent));
 fill($, { pass: 'short' }); $('#su-submit').click(); await sleep(60);
 check('short password rejected', /8 characters/i.test($('#su-error').textContent));
 
-fill($, { dob: '' }); $('#su-submit').click(); await sleep(60);
-check('missing birthdate rejected', /date of birth/i.test($('#su-error').textContent));
-
-fill($, { dob: dobFor(15) }); $('#su-submit').click(); await sleep(60);
-check('under 18 rejected', /18 or older/i.test($('#su-error').textContent), $('#su-error').textContent);
-check('still no account created for a minor', calls.signup === 0);
-
-fill($, { dob: dobFor(17) }); $('#su-submit').click(); await sleep(60);
-check('17 rejected too', /18 or older/i.test($('#su-error').textContent));
-
-fill($, { sms: true, phone: '' }); $('#su-submit').click(); await sleep(60);
-check('sms consent without a number rejected', /phone number/i.test($('#su-error').textContent));
+fill($, { pass: 'longenoughpw', pass2: 'differentpw' }); $('#su-submit').click(); await sleep(60);
+check('mismatched passwords rejected', /do not match/i.test($('#su-error').textContent), $('#su-error').textContent);
+check('no account created on mismatch', calls.signup === 0);
 
 console.log('\n--- successful sign-up ---');
 ({ $, calls, errs } = boot()); await sleep(150);
-fill($, { phone: '+1 555 123 4567', sms: true, marketing: true });
+fill($);
 $('#su-submit').click(); await sleep(300);
 check('account created', calls.signup === 1);
 check('profile saved', !!calls.profile);
 check('name sent', calls.profile.fullName === 'Charley Smith');
-check('birthdate sent', !!calls.profile.birthdate);
-check('phone sent', calls.profile.phone === '+1 555 123 4567');
-check('consent flag sent', calls.profile.phoneConsent === true);
-check('consent wording recorded verbatim', /Reply STOP to opt out/i.test(calls.profile.consentText || ''), String(calls.profile.consentText).slice(0, 40));
-check('marketing opt-in sent', calls.profile.marketingOptIn === true);
+check('no birthdate collected', !calls.profile.birthdate);
+check('no phone collected', !calls.profile.phone);
 check('lands on the paywall', $('#screen-paywall').classList.contains('active'));
-
-console.log('\n--- consent defaults ---');
-({ $, calls } = boot()); await sleep(150);
-check('sms box unticked by default', $('#su-sms').checked === false);
-check('marketing box unticked by default', $('#su-marketing').checked === false);
-fill($, { phone: '+15551234567' });   /* number given, consent NOT ticked */
-$('#su-submit').click(); await sleep(300);
-check('phone stored without consent', calls.profile.phone === '+15551234567');
-check('consent stays false', calls.profile.phoneConsent === false);
-check('no consent text recorded', !calls.profile.consentText);
 
 console.log('\n--- existing account ---');
 ({ $, calls } = boot()); await sleep(150);

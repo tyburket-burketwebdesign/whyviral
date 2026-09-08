@@ -37,7 +37,9 @@ check('no runtime errors', errs.length === 0, errs.join('|'));
 ({ $, window } = await boot('#signup'));
 check('#signup opens the sign-up form', $('#screen-signup').classList.contains('active'));
 check('sign-up asks for a name', !!$('#su-name'));
-check('sign-up asks for a birthdate', !!$('#su-dob'));
+check('sign-up asks to confirm the password', !!$('#su-pass2'));
+check('sign-up no longer asks for a birthdate', !$('#su-dob'));
+check('sign-up no longer asks for a phone', !$('#su-phone'));
 
 ({ $ } = await boot('#pricing'));
 check('#pricing opens the paywall', $('#screen-paywall').classList.contains('active'));

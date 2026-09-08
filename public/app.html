@@ -12,7 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
 </head>
-<body>
+<body class="booting">
 
 <header class="topbar">
   <a href="/" class="brand" id="brand-home" aria-label="WhyViral home"><span class="brand-why">why</span>viral</a>
@@ -187,76 +187,88 @@
   </section>
 
   <!-- ===== CREATE ACCOUNT ===== -->
-  <section class="screen" id="screen-signup">
-    <button class="back" data-back="welcome">Back</button>
-    <h2>Create your account</h2>
-    <p class="lede sm">Seven days free. Cancel any time before it ends and you're not charged.</p>
+  <section class="screen auth-screen" id="screen-signup">
+    <div class="auth-card">
+      <p class="auth-kicker">Step 1 of 2</p>
+      <h2>Create your account</h2>
+      <p class="auth-sub">Seven days free. Cancel before it ends and you're not charged.</p>
 
-    <label class="field">
-      <span class="field-label">Full name</span>
-      <input type="text" id="su-name" autocomplete="name" placeholder="Charley Smith">
-    </label>
+      <label class="field">
+        <span class="field-label">Full name</span>
+        <input type="text" id="su-name" autocomplete="name" placeholder="Charley Smith">
+      </label>
 
-    <label class="field">
-      <span class="field-label">Email</span>
-      <input type="email" id="su-email" autocomplete="email" inputmode="email" placeholder="you@example.com">
-    </label>
+      <label class="field">
+        <span class="field-label">Email</span>
+        <input type="email" id="su-email" autocomplete="email" inputmode="email" placeholder="you@example.com">
+      </label>
 
-    <label class="field">
-      <span class="field-label">Password</span>
-      <input type="password" id="su-pass" autocomplete="new-password" placeholder="At least 8 characters">
-      <span class="field-hint" id="su-pass-hint">Use something you don't use elsewhere.</span>
-    </label>
+      <label class="field">
+        <span class="field-label">Password</span>
+        <input type="password" id="su-pass" autocomplete="new-password" placeholder="At least 8 characters">
+        <span class="meter" id="su-meter" hidden><i></i><i></i><i></i><i></i></span>
+      </label>
 
-    <label class="field">
-      <span class="field-label">Date of birth</span>
-      <input type="date" id="su-dob">
-      <span class="field-hint">You must be 18 or older.</span>
-    </label>
+      <label class="field">
+        <span class="field-label">Confirm password</span>
+        <input type="password" id="su-pass2" autocomplete="new-password" placeholder="Type it again">
+      </label>
 
-    <label class="field">
-      <span class="field-label">Phone <span class="opt">optional</span></span>
-      <input type="tel" id="su-phone" autocomplete="tel" inputmode="tel" placeholder="+1 555 123 4567">
-    </label>
-
-    <label class="check">
-      <input type="checkbox" id="su-sms">
-      <span id="su-sms-text">Text me occasional product updates and trend alerts from WhyViral. Message and data rates may apply. Reply STOP to opt out at any time.</span>
-    </label>
-
-    <label class="check">
-      <input type="checkbox" id="su-marketing">
-      <span>Email me tips on what's working on TikTok right now.</span>
-    </label>
-
-    <p class="error" id="su-error" hidden></p>
-    <button class="btn btn-primary btn-block" id="su-submit">Create account</button>
-    <p class="auth-alt">By creating an account you agree to our
-      <a href="/terms.html">Terms</a> and <a href="/privacy.html">Privacy Policy</a>.</p>
-    <p class="auth-alt">Already have an account? <a href="#" id="go-signin">Sign in</a></p>
+      <p class="error" id="su-error" hidden></p>
+      <button class="btn btn-primary btn-block" id="su-submit">Create account</button>
+      <p class="auth-fine">By continuing you agree to our <a href="/terms.html">Terms</a> and <a href="/privacy.html">Privacy Policy</a>.</p>
+      <p class="auth-switch">Already have an account? <a href="#" id="go-signin">Sign in</a></p>
+    </div>
   </section>
 
   <!-- ===== SIGN IN ===== -->
-  <section class="screen" id="screen-auth">
-    <button class="back" data-back="welcome">Back</button>
-    <h2 id="auth-title">Welcome back</h2>
-    <p class="lede sm" id="auth-lede">Sign in to pick up where you left off.</p>
+  <section class="screen auth-screen" id="screen-auth">
+    <div class="auth-card">
+      <p class="auth-kicker">Welcome back</p>
+      <h2 id="auth-title">Sign in</h2>
+      <p class="auth-sub" id="auth-lede">Pick up where you left off.</p>
 
-    <label class="field">
-      <span class="field-label">Email</span>
-      <input type="email" id="si-email" autocomplete="email" inputmode="email" placeholder="you@example.com">
-    </label>
+      <label class="field">
+        <span class="field-label">Email</span>
+        <input type="email" id="si-email" autocomplete="email" inputmode="email" placeholder="you@example.com">
+      </label>
 
-    <label class="field">
-      <span class="field-label">Password</span>
-      <input type="password" id="si-pass" autocomplete="current-password" placeholder="Your password">
-    </label>
+      <label class="field">
+        <span class="field-label">
+          Password
+          <a href="#" id="go-reset" class="field-link">Forgot?</a>
+        </span>
+        <input type="password" id="si-pass" autocomplete="current-password" placeholder="Your password">
+      </label>
 
-    <p class="error" id="auth-error" hidden></p>
-    <p class="auth-sent" id="auth-sent" hidden>Check your inbox for a reset link.</p>
-    <button class="btn btn-primary btn-block" id="si-submit">Sign in</button>
-    <p class="auth-alt"><a href="#" id="go-reset">Forgot your password?</a></p>
-    <p class="auth-alt">New here? <a href="#" id="go-signup">Create an account</a></p>
+      <p class="error" id="auth-error" hidden></p>
+      <p class="notice" id="auth-sent" hidden>Check your inbox for a reset link.</p>
+      <button class="btn btn-primary btn-block" id="si-submit">Sign in</button>
+      <p class="auth-switch">New here? <a href="#" id="go-signup">Create an account</a></p>
+    </div>
+  </section>
+
+  <!-- ===== SET NEW PASSWORD ===== -->
+  <section class="screen auth-screen" id="screen-reset">
+    <div class="auth-card">
+      <p class="auth-kicker">Password reset</p>
+      <h2>Choose a new password</h2>
+      <p class="auth-sub">You're signed in from the link in your email. Set a new password to finish.</p>
+
+      <label class="field">
+        <span class="field-label">New password</span>
+        <input type="password" id="rp-pass" autocomplete="new-password" placeholder="At least 8 characters">
+        <span class="meter" id="rp-meter" hidden><i></i><i></i><i></i><i></i></span>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Confirm new password</span>
+        <input type="password" id="rp-pass2" autocomplete="new-password" placeholder="Type it again">
+      </label>
+
+      <p class="error" id="rp-error" hidden></p>
+      <button class="btn btn-primary btn-block" id="rp-submit">Save new password</button>
+    </div>
   </section>
 
   <!-- ===== PAYWALL ===== -->

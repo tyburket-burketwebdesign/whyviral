@@ -49,7 +49,7 @@ r = await req({ fullName: 'C', birthdate: dobFor(28) });
 check('short name rejected', r.status === 400 && r.body.error === 'name_required');
 
 r = await req({ fullName: 'Charley Smith' });
-check('missing birthdate rejected', r.status === 400 && r.body.error === 'birthdate_required');
+check('birthdate optional at sign-up', r.status === 200, JSON.stringify(r.body));
 
 r = await req({ fullName: 'Charley Smith', birthdate: 'not-a-date' });
 check('junk birthdate rejected', r.status === 400 && r.body.error === 'birthdate_invalid');

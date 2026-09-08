@@ -97,12 +97,27 @@ const WV_AUTH = (function () {
     return true;
   }
 
+  /* A reset is a link, not a code. The link signs them in with a temporary
+     recovery session and returns to #reset, where they choose a new password
+     twice. Sending a code here was wrong — there is nothing for a code to do. */
   async function sendReset(email) {
     if (!configured()) throw new Error('Not configured.');
     await sb('/auth/v1/recover', {
       method: 'POST',
-      body: JSON.stringify({ email, options: { redirect_to: location.origin + '/app.html' } }),
+      body: JSON.stringify({ email, redirect_to: location.origin + '/app.html#reset' }),
     });
+    return true;
+  }
+
+  async function updatePassword(password) {
+    const s = await currentSession();
+    if (!s?.access_token) throw new Error('Your reset link expired. Request a new one.');
+    const r = await sb('/auth/v1/user', {
+      method: 'PUT',
+      headers: { authorization: `Bearer ${s.access_token}` },
+      body: JSON.stringify({ password }),
+    });
+    if (!r || r.error) throw new Error('Could not update your password.');
     return true;
   }
 
@@ -151,13 +166,14 @@ const WV_AUTH = (function () {
 
     const access_token = p.get('access_token');
     if (!access_token) return false;
+    const isRecovery = p.get('type') === 'recovery';
     writeSession({
       access_token,
       refresh_token: p.get('refresh_token'),
       expires_at: Math.floor(Date.now() / 1000) + Number(p.get('expires_in') || 3600),
     });
     history.replaceState(null, '', location.pathname + location.search);
-    return 'signed-in';
+    return isRecovery ? 'recovery' : 'signed-in';
   }
 
   function signOut() {
@@ -185,7 +201,7 @@ const WV_AUTH = (function () {
   }
 
   return {
-    deviceId, currentSession, signUp, signIn, sendReset, saveProfile, stashProfile, flushProfile, captureRedirect, signOut,
+    deviceId, currentSession, signUp, signIn, sendReset, updatePassword, saveProfile, stashProfile, flushProfile, captureRedirect, signOut,
     apiFetch, status, configured,
     invalidate: () => { cached = null; },
     isSignedIn: async () => !!(await currentSession()),

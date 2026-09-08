@@ -411,34 +411,77 @@ textarea{resize:vertical;min-height:62px;font-size:14px;margin-top:7px}
 .plan-opt.active{border-color:var(--pink);color:var(--ink);box-shadow:0 0 0 3px rgba(255,61,139,.1)}
 .plan-save{display:block;font-size:11px;color:var(--pink-deep);margin-top:3px}
 
-/* ---------- auth screen ---------- */
-#screen-auth .field{margin-bottom:18px}
-#screen-auth h2{margin-bottom:8px}
-.auth-alt{font-size:13px;color:var(--ink-3);text-align:center;margin-top:16px;line-height:1.6}
 
-/* ---------- one-time code ---------- */
-.code-input{
-  font-family:'JetBrains Mono',monospace !important;font-size:26px !important;
-  letter-spacing:.34em;text-align:center;padding:14px 10px !important;
-}
-#auth-step2{margin-top:18px;padding-top:18px;border-top:1px solid var(--line-2)}
-#auth-step2 .btn-quiet{margin-top:8px}
+/* ================= auth ================= */
+/* A centred card rather than a form pinned to the left of a wide shell. The
+   difference between "a page with inputs" and "a product" is mostly this. */
+body.booting .screen{display:none !important}
 
-/* ---------- sign-up form ---------- */
-input[type=password],input[type=tel],input[type=date]{
-  width:100%;font-family:inherit;font-size:15px;color:var(--ink);
-  background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 13px;
+.auth-screen{display:none;padding:0}
+.auth-screen.active{
+  display:flex;align-items:flex-start;justify-content:center;
+  min-height:calc(100vh - 120px);padding:40px 0 80px;
 }
-input[type=password]:focus,input[type=tel]:focus,input[type=date]:focus{
-  border-color:var(--pink);outline:none;box-shadow:0 0 0 3px rgba(255,61,139,.13);
+@media(min-width:760px){.auth-screen.active{align-items:center;padding:24px 0 80px}}
+
+.auth-card{
+  width:100%;max-width:440px;background:var(--paper);
+  border:1px solid var(--line);border-radius:18px;padding:34px 30px;
+  box-shadow:0 24px 60px -34px rgba(20,18,32,.30), 0 1px 2px rgba(20,18,32,.04);
 }
-.opt{font-weight:400;color:var(--ink-4);font-size:12px;margin-left:5px}
-.check{display:flex;gap:11px;align-items:flex-start;margin-bottom:16px;cursor:pointer}
-.check input{
-  width:19px;height:19px;flex:0 0 19px;margin-top:2px;accent-color:var(--pink);cursor:pointer;
+@media(max-width:520px){.auth-card{padding:26px 22px;border-radius:14px}}
+
+.auth-kicker{
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--pink-deep);margin-bottom:10px;
 }
-.check span{font-size:13px;color:var(--ink-2);line-height:1.55}
-.auth-alt a{color:var(--pink-deep);text-decoration:none;font-weight:500}
-.auth-alt a:hover{text-decoration:underline}
-#screen-signup .field{margin-bottom:16px}
-@media(min-width:760px){#screen-signup{max-width:520px;margin:0 auto}}
+.auth-card h2{font-size:26px;letter-spacing:-.03em;margin-bottom:7px}
+.auth-sub{font-size:14.5px;color:var(--ink-3);line-height:1.55;margin-bottom:26px}
+
+.auth-card .field{margin-bottom:16px}
+.auth-card .field-label{
+  display:flex;justify-content:space-between;align-items:baseline;
+  font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:7px;
+}
+.field-link{font-size:12.5px;font-weight:500;color:var(--pink-deep);text-decoration:none}
+.field-link:hover{text-decoration:underline}
+
+.auth-card input{
+  width:100%;font-family:inherit;font-size:15.5px;color:var(--ink);
+  background:var(--cream);border:1px solid var(--line);border-radius:10px;
+  padding:13px 14px;transition:border-color .14s,box-shadow .14s,background .14s;
+}
+.auth-card input::placeholder{color:var(--ink-4)}
+.auth-card input:focus{
+  background:var(--paper);border-color:var(--pink);outline:none;
+  box-shadow:0 0 0 3.5px rgba(255,61,139,.13);
+}
+.auth-card input.bad{border-color:var(--pink);background:rgba(255,61,139,.04)}
+
+/* Strength meter — feedback while typing beats an error after submitting. */
+/* Four segments rather than one bar: a partial bar reads as a stray underline,
+   four segments read as a meter without a label. */
+.meter{display:flex;gap:4px;margin-top:9px}
+.meter i{
+  flex:1;height:3px;border-radius:99px;background:rgba(20,18,32,.09);
+  transition:background .22s;
+}
+.meter i.on{background:var(--pink)}
+.meter i.strong{background:var(--blue-deep)}
+
+.auth-card .btn{margin-top:6px}
+.auth-fine{font-size:12px;color:var(--ink-4);line-height:1.6;margin-top:14px;text-align:center}
+.auth-fine a,.auth-switch a{color:var(--pink-deep);text-decoration:none;font-weight:500}
+.auth-fine a:hover,.auth-switch a:hover{text-decoration:underline}
+.auth-switch{
+  font-size:13.5px;color:var(--ink-3);text-align:center;
+  margin-top:20px;padding-top:18px;border-top:1px solid var(--line-2);
+}
+.notice{
+  font-size:13.5px;color:var(--blue-deep);background:rgba(143,217,245,.2);
+  padding:11px 13px;border-radius:9px;margin-bottom:14px;line-height:1.5;
+}
+.auth-card .error{
+  font-size:13.5px;color:var(--pink-deep);background:rgba(255,61,139,.08);
+  padding:11px 13px;border-radius:9px;margin-bottom:14px;line-height:1.5;
+}

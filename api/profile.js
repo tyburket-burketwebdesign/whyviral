@@ -51,13 +51,14 @@ async function onRequest({ request, env }) {
     return json({ error: 'disposable_email', message: 'Please use a permanent email address.' }, 400);
   }
 
-  if (!body.birthdate) return json({ error: 'birthdate_required', message: 'We need your date of birth.' }, 400);
-  const age = ageFrom(String(body.birthdate));
-  if (age === null) return json({ error: 'birthdate_invalid', message: 'That date does not look right.' }, 400);
-  if (age < MIN_AGE) {
-    return json({ error: 'too_young', message: `You need to be ${MIN_AGE} or older to use WhyViral.` }, 403);
+  /* Birthdate is optional now that sign-up doesn't ask for it. When it IS
+     supplied — a later profile screen, say — it's still checked, because an
+     under-age account is a problem wherever it comes from. */
+  if (body.birthdate) {
+    const age = ageFrom(String(body.birthdate));
+    if (age === null || age > 120) return json({ error: 'birthdate_invalid', message: 'That date does not look right.' }, 400);
+    if (age < MIN_AGE) return json({ error: 'too_young', message: `You need to be ${MIN_AGE} or older to use WhyViral.` }, 403);
   }
-  if (age > 120) return json({ error: 'birthdate_invalid', message: 'That date does not look right.' }, 400);
 
   let phone = null;
   const phoneConsent = body.phoneConsent === true;
@@ -78,9 +79,9 @@ async function onRequest({ request, env }) {
 
   const patch = {
     full_name: fullName,
-    birthdate: String(body.birthdate),
     email_normalized: normalizeEmail(email),
     marketing_opt_in: body.marketingOptIn === true,
+    ...(body.birthdate ? { birthdate: String(body.birthdate) } : {}),
     last_seen_at: new Date().toISOString(),
   };
   if (phone) {

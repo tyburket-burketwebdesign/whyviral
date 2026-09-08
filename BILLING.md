@@ -275,52 +275,42 @@ arriving on your first busy day.
 
 ---
 
-# Sign-up and the data it collects
+# Sign-up
 
-Sign-up is a real form now: name, email, password, date of birth, and an
-optional phone number. Supabase hashes the password — it never reaches our
-database or our code. The profile is saved through `/api/profile`, which
-re-validates everything the browser checked, because browser validation is a
-convenience and not a control.
+Name, email, password, confirm password. That is all.
 
-## Age
+Birthdate, phone and SMS consent were removed: every field between a visitor and
+the product costs signups, and none of those three did any work. `/api/profile`
+still accepts and validates a birthdate if you add a profile screen later, and
+the 18+ check still runs there.
 
-18 or older, enforced in the browser and again on the server. Under-18 gets a
-clear refusal and **nothing is written to the database** — no partial record of
-a minor. 18 matches the age needed to hold the card the trial requires and keeps
-you clear of the child-privacy rules that would otherwise apply.
+## Password reset
 
-## Phone and SMS consent
+A reset is a **link**, not a code. The link signs the person in with a temporary
+recovery session and returns them to `/app.html#reset`, where they choose a new
+password twice. Sending a code for a reset was wrong — there is nothing for a
+code to do.
 
-The box is unticked by default and the number is optional. If someone ticks it,
-three things are stored: the number, the flag, and **the exact wording they were
-shown**, with a timestamp.
+Supabase → Authentication → Emails → **Reset Password** must use
+`emails/recovery.html`, which contains `{{ .ConfirmationURL }}` and no token.
 
-That last part is the point. Under the TCPA, "they ticked a box" is not a
-defence — you need to show what they agreed to and when. If you change the
-consent wording on the form, previously stored records still hold the old text,
-which is correct.
-
-A number can be stored without consent. Consent can never be stored without a
-number.
-
-**Only text people who ticked it.** The record is worth nothing if the practice
-does not match it.
+Sign-in emails are different: those are codes, because a scanner prefetching a
+sign-in link consumes it. A reset link is fine to prefetch — worst case the
+person clicks a dead link and asks for another.
 
 ## Supabase settings this needs
 
 **Authentication → Providers → Email**
 - Enable Email provider
-- **Confirm email: off** — with it on, sign-up returns no session and the person
-  is stranded on a "check your inbox" step before they have seen the product.
-  The code handles that case, but it costs conversions.
+- **Confirm email: off.** With it on, sign-up returns no session and the person
+  is stranded before they have seen anything. The code holds their name locally
+  and writes it after they sign in, but it costs conversions.
 
-Password reset uses `/auth/v1/recover` and returns to `/app.html`. Keep the
-Reset Password email template pointed at `{{ .ConfirmationURL }}` — a reset link
-is a link, and unlike a sign-in code there is nothing better to use.
+## If sign-up fails
 
-## After sign-up
-
-The person lands on the paywall with their trial ready to start. `TRIAL_MODE`
-still governs what happens next: `card` sends them to Stripe Checkout, `free`
-gives them three analyses first.
+The form now shows what Supabase actually said instead of a generic failure.
+The usual causes:
+- "Email provider is disabled" — turn it on
+- "Password should be at least 6 characters" — Supabase has its own minimum
+- Nothing at all — check the browser console; a CORS or URL error means the
+  Supabase URL in `public/app.html` is wrong

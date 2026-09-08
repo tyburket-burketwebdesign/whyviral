@@ -509,65 +509,62 @@ async function refreshAccount() {
 }
 
 const showErr = (sel, m) => { const e = $(sel); e.textContent = m; e.hidden = false; };
+const clearErr = sel => { const e = $(sel); if (e) e.hidden = true; };
 
-/* Old enough to hold the card the trial requires. Checked here for a fast
-   answer and again on the server, which is the one that counts. */
-function ageFrom(v) {
-  const d = new Date(v + 'T00:00:00Z');
-  if (isNaN(d)) return null;
-  const n = new Date();
-  let a = n.getUTCFullYear() - d.getUTCFullYear();
-  const m = n.getUTCMonth() - d.getUTCMonth();
-  if (m < 0 || (m === 0 && n.getUTCDate() < d.getUTCDate())) a--;
-  return a;
+/* Live strength feedback. Cheap to add and it stops the "your password is
+   invalid" surprise after someone has already committed to a form. */
+function scorePassword(p) {
+  let s = 0;
+  if (p.length >= 8) s++;
+  if (p.length >= 12) s++;
+  if (/[A-Z]/.test(p) && /[a-z]/.test(p)) s++;
+  if (/\d/.test(p) || /[^A-Za-z0-9]/.test(p)) s++;
+  return s;
 }
+function wireMeter(input, meter) {
+  const el2 = $(input), m = $(meter);
+  if (!el2 || !m) return;
+  el2.addEventListener('input', () => {
+    const v = el2.value;
+    m.hidden = v.length === 0;
+    const s = scorePassword(v);
+    [...m.querySelectorAll('i')].forEach((seg, i) => {
+      seg.classList.toggle('on', i < s);
+      seg.classList.toggle('strong', i < s && s >= 3);
+    });
+    el2.classList.remove('bad');
+  });
+}
+wireMeter('#su-pass', '#su-meter');
+wireMeter('#rp-pass', '#rp-meter');
 
 const suBtn = $('#su-submit');
 if (suBtn) suBtn.onclick = async () => {
   const name = ($('#su-name').value || '').trim();
   const email = ($('#su-email').value || '').trim();
   const pass = $('#su-pass').value || '';
-  const dob = $('#su-dob').value || '';
-  const phone = ($('#su-phone').value || '').trim();
-  const sms = $('#su-sms').checked;
-  $('#su-error').hidden = true;
+  const pass2 = $('#su-pass2').value || '';
+  clearErr('#su-error');
+  ['#su-name', '#su-email', '#su-pass', '#su-pass2'].forEach(s => $(s).classList.remove('bad'));
 
-  if (name.length < 2) return showErr('#su-error', 'Tell us your name.');
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return showErr('#su-error', 'That email does not look right.');
-  if (pass.length < 8) return showErr('#su-error', 'Your password needs at least 8 characters.');
-  if (!dob) return showErr('#su-error', 'We need your date of birth.');
-  const age = ageFrom(dob);
-  if (age === null) return showErr('#su-error', 'That date does not look right.');
-  if (age < 18) return showErr('#su-error', 'You need to be 18 or older to use WhyViral.');
-  if (sms && !phone) return showErr('#su-error', 'Add a phone number, or untick the text-message box.');
+  const bad = (sel, msg) => { $(sel).classList.add('bad'); $(sel).focus(); showErr('#su-error', msg); };
+  if (name.length < 2) return bad('#su-name', 'Tell us your name.');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return bad('#su-email', 'That email does not look right.');
+  if (pass.length < 8) return bad('#su-pass', 'Your password needs at least 8 characters.');
+  if (pass !== pass2) return bad('#su-pass2', 'Those two passwords do not match.');
 
   suBtn.disabled = true;
   suBtn.textContent = 'Creating your account…';
   try {
     const r = await WV_AUTH.signUp(email, pass);
-
-    /* With "Confirm email" switched on, Supabase returns no session, so there
-       is no token to save the profile with. Rather than lose what they typed,
-       hold it locally and write it the moment they sign in. */
     if (!r.signedIn) {
-      WV_AUTH.stashProfile({
-        fullName: name, birthdate: dob,
-        phone: phone || null, phoneConsent: sms,
-        consentText: sms ? ($('#su-sms-text').textContent || '').trim() : null,
-        marketingOptIn: $('#su-marketing').checked,
-      });
-      showErr('#su-error', 'Account created. Confirm your email, then sign in — your details are saved.');
+      WV_AUTH.stashProfile({ fullName: name });
+      showErr('#su-error', 'Account created. Confirm your email, then sign in.');
+      suBtn.disabled = false;
       suBtn.textContent = 'Create account';
       return;
     }
-    /* Store the consent wording exactly as shown, not a paraphrase — that is
-       the record that matters if anyone ever asks what was agreed to. */
-    await WV_AUTH.saveProfile({
-      fullName: name, birthdate: dob,
-      phone: phone || null, phoneConsent: sms,
-      consentText: sms ? ($('#su-sms-text').textContent || '').trim() : null,
-      marketingOptIn: $('#su-marketing').checked,
-    });
+    await WV_AUTH.saveProfile({ fullName: name }).catch(() => {});
     WV_AUTH.invalidate();
     const acct = await refreshAccount();
     toast('Account created');
@@ -575,8 +572,11 @@ if (suBtn) suBtn.onclick = async () => {
     show(acct.subscribed ? 'welcome' : 'paywall');
   } catch (e) {
     const msg = String(e.message || e);
+    /* Surface what Supabase actually said. A generic failure here is the
+       difference between a two-minute fix and an hour of guessing. */
     showErr('#su-error', /already registered|already been/i.test(msg)
-      ? 'That email already has an account. Sign in instead.' : msg);
+      ? 'That email already has an account. Sign in instead.'
+      : (/password/i.test(msg) ? msg : 'Could not create your account: ' + msg));
     suBtn.disabled = false;
     suBtn.textContent = 'Create account';
   }
@@ -586,14 +586,13 @@ const siBtn = $('#si-submit');
 if (siBtn) siBtn.onclick = async () => {
   const email = ($('#si-email').value || '').trim();
   const pass = $('#si-pass').value || '';
-  $('#auth-error').hidden = true;
-  $('#auth-sent').hidden = true;
+  clearErr('#auth-error'); $('#auth-sent').hidden = true;
   if (!email || !pass) return showErr('#auth-error', 'Enter your email and password.');
   siBtn.disabled = true;
   siBtn.textContent = 'Signing in…';
   try {
     await WV_AUTH.signIn(email, pass);
-    await WV_AUTH.flushProfile();     /* write anything stashed before confirmation */
+    await WV_AUTH.flushProfile();
     WV_AUTH.invalidate();
     await refreshAccount();
     toast('Signed in');
@@ -605,12 +604,33 @@ if (siBtn) siBtn.onclick = async () => {
   }
 };
 
+const rpBtn = $('#rp-submit');
+if (rpBtn) rpBtn.onclick = async () => {
+  const p1 = $('#rp-pass').value || '', p2 = $('#rp-pass2').value || '';
+  clearErr('#rp-error');
+  if (p1.length < 8) return showErr('#rp-error', 'Your password needs at least 8 characters.');
+  if (p1 !== p2) return showErr('#rp-error', 'Those two passwords do not match.');
+  rpBtn.disabled = true;
+  rpBtn.textContent = 'Saving…';
+  try {
+    await WV_AUTH.updatePassword(p1);
+    WV_AUTH.invalidate();
+    await refreshAccount();
+    toast('Password updated');
+    show('welcome');
+  } catch (e) {
+    showErr('#rp-error', String(e.message || e));
+    rpBtn.disabled = false;
+    rpBtn.textContent = 'Save new password';
+  }
+};
+
 const resetLink = $('#go-reset');
 if (resetLink) resetLink.onclick = async (ev) => {
   ev.preventDefault();
   const email = ($('#si-email').value || '').trim();
-  $('#auth-error').hidden = true;
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return showErr('#auth-error', 'Enter your email first, then tap reset.');
+  clearErr('#auth-error');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return showErr('#auth-error', 'Enter your email above first, then tap Forgot.');
   try { await WV_AUTH.sendReset(email); $('#auth-sent').hidden = false; }
   catch (e) { showErr('#auth-error', String(e.message || e)); }
 };
@@ -618,6 +638,8 @@ if (resetLink) resetLink.onclick = async (ev) => {
 $('#go-signin')?.addEventListener('click', e => { e.preventDefault(); show('auth'); });
 $('#go-signup')?.addEventListener('click', e => { e.preventDefault(); show('signup'); });
 $('#si-pass')?.addEventListener('keydown', e => { if (e.key === 'Enter') siBtn.click(); });
+$('#su-pass2')?.addEventListener('keydown', e => { if (e.key === 'Enter') suBtn.click(); });
+$('#rp-pass2')?.addEventListener('keydown', e => { if (e.key === 'Enter') rpBtn.click(); });
 
 const payGo = $('#paywall-go');
 if (payGo) payGo.onclick = async () => {
@@ -642,6 +664,7 @@ function routeFromHash() {
   const h = (location.hash || '').replace('#', '').toLowerCase();
   if (h === 'signin') { history.replaceState(null, '', location.pathname); return 'auth'; }
   if (h === 'signup') { history.replaceState(null, '', location.pathname); return 'signup'; }
+  if (h === 'reset') { history.replaceState(null, '', location.pathname); return 'reset'; }
   if (h === 'pricing' || h === 'upgrade') { history.replaceState(null, '', location.pathname); return 'paywall'; }
   return null;
 }
@@ -659,9 +682,17 @@ function routeFromHash() {
     showErr('#auth-error', result);
   }
   const acct = await refreshAccount();
-  /* An expired-link message outranks a deep link; otherwise honour it. */
-  if (deepLink && !(typeof result === 'string' && result)) {
+
+  if (result === 'recovery') {
+    /* Arrived from a reset link: they hold a temporary session, so send them
+       straight to choosing a new password. */
+    show('reset');
+  } else if (deepLink && !(typeof result === 'string' && result)) {
     if (deepLink === 'paywall') renderPaywall(null, acct);
     show(deepLink);
   }
+
+  /* Reveal only once routing has decided, so the welcome screen never flashes
+     before the sign-up form it was supposed to show. */
+  document.body.classList.remove('booting');
 })();

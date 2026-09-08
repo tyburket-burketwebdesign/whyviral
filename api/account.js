@@ -10,43 +10,54 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), {
 });
 
 async function onRequestGet({ request, env }) {
+  const trialMode = (env.TRIAL_MODE || 'free').toLowerCase();
+  const trialDays = Number(env.TRIAL_DAYS || 7);
+
+  /* Every response returns the same shape. An earlier version returned a
+     stripped-down object on the "no account row yet" path, so the front end
+     could not tell which trial model was running and rendered nothing. */
+  const base = {
+    billing: true, signedIn: false, email: null, name: null,
+    plan: 'free', status: 'none', subscribed: false,
+    trialMode, trialDays,
+    remaining: trialMode === 'card' ? 0 : null,
+    trialLimit: null, renewsAt: null, cancelAtPeriodEnd: false,
+  };
+
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) {
-    /* Billing not configured — the app is open. */
-    return json({ billing: false, signedIn: false, plan: 'open', remaining: null });
+    /* Billing not configured — the app is open to everyone. */
+    return json({ ...base, billing: false, plan: 'open', trialMode: 'free', remaining: null });
   }
 
   const url = new URL(request.url);
   const deviceId = (url.searchParams.get('device') || request.headers.get('x-device-id') || '').slice(0, 64) || null;
   const token = bearerFrom(request);
   const claims = token ? await verifyToken(token, env.SUPABASE_JWT_SECRET) : null;
-  if (token && !claims) return json({ billing: true, signedIn: false, error: 'bad_token' }, 401);
+  if (token && !claims) return json({ ...base, error: 'bad_token' }, 401);
 
   try {
     const account = await resolveAccount(env, { claims, deviceId });
-    if (!account) return json({ billing: true, signedIn: false, plan: 'free', remaining: null });
+    /* Signed out with no row yet — still report the trial model. */
+    if (!account) return json({ ...base, signedIn: !!claims });
 
     const ent = await getEntitlement(env, account.id);
     const active = ent.status === 'active' || ent.status === 'trialing';
 
     return json({
-      billing: true,
+      ...base,
       signedIn: !!claims,
       email: account.email || null,
       name: account.full_name || null,
       plan: ent.plan,
       status: ent.status,
       subscribed: active,
-      trialMode: (env.TRIAL_MODE || 'free').toLowerCase(),
-      trialDays: Number(env.TRIAL_DAYS || 7),
-      remaining: active ? null
-        : ((env.TRIAL_MODE || 'free').toLowerCase() === 'card' ? 0
-           : Math.max(0, ent.trial_limit - ent.trial_used)),
+      remaining: active ? null : (trialMode === 'card' ? 0 : Math.max(0, ent.trial_limit - ent.trial_used)),
       trialLimit: ent.trial_limit,
       renewsAt: ent.current_period_end || null,
       cancelAtPeriodEnd: !!ent.cancel_at_period_end,
     });
   } catch (e) {
-    return json({ billing: true, signedIn: !!claims, plan: 'free', remaining: null, degraded: true }, 200);
+    return json({ ...base, signedIn: !!claims, degraded: true }, 200);
   }
 }
 

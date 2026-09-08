@@ -578,6 +578,10 @@ async function refreshAccount() {
     return s;
   }
 
+  /* Subscribers get a manage-billing button on the paywall screen. */
+  const manage = $('#paywall-manage');
+  if (manage) manage.hidden = !s.subscribed;
+
   if (s.signedIn) {
     if (signin) signin.hidden = true;
     if (wrap) wrap.hidden = false;

@@ -12,6 +12,10 @@
   --shell:1180px; --read:720px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
+/* The hidden attribute must win. Any class that sets display — .status-bar,
+   .menu, .auth-screen — silently overrides the browser default and leaves
+   "hidden" elements on screen as empty boxes. */
+[hidden]{display:none !important}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{
   font-family:'Inter',system-ui,-apple-system,sans-serif;

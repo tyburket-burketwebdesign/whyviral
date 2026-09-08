@@ -33,6 +33,10 @@
 html{transition:none}
 body,.topbar,.auth-card,.panel,.finding,.script,.hist{transition:background .18s,border-color .18s,color .18s}
 *{box-sizing:border-box;margin:0;padding:0}
+/* The hidden attribute must win. Any class that sets display — .status-bar,
+   .menu, .auth-screen — silently overrides the browser default and leaves
+   "hidden" elements on screen as empty boxes. */
+[hidden]{display:none !important}
 html{-webkit-text-size-adjust:100%}
 body{
   font-family:'Inter',system-ui,-apple-system,sans-serif;
@@ -603,3 +607,7 @@ body.booting .screen{display:none !important}
   background:var(--cream);color:var(--ink);font-size:16px;line-height:1;cursor:pointer;font-family:inherit;
 }
 .mini-step button:hover{border-color:var(--pink);color:var(--pink)}
+
+/* Layout helpers referenced by markup that had no rule of their own. */
+.hero-copy{min-width:0}
+.result-main{min-width:0}

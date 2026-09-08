@@ -11,14 +11,50 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
+<script>
+  /* Apply the saved theme before first paint, otherwise a dark-mode user sees
+     a white flash on every load. */
+  try { document.documentElement.setAttribute('data-theme',
+        localStorage.getItem('whyviral.theme.v1') === 'dark' ? 'dark' : 'light'); } catch (e) {}
+</script>
 </head>
 <body class="booting">
 
 <header class="topbar">
   <a href="/" class="brand" id="brand-home" aria-label="WhyViral home"><span class="brand-why">why</span>viral</a>
   <div class="acct">
-    <span id="acct-state" hidden></span>
-    <button class="ghost-btn" id="nav-history" hidden>Past breakdowns</button>
+    <span id="trial-chip" hidden></span>
+    <button class="ghost-btn" id="nav-history" hidden>Breakdowns</button>
+    <button class="ghost-btn" id="nav-signin" hidden>Sign in</button>
+
+    <div class="avatar-wrap" id="avatar-wrap" hidden>
+      <button class="avatar-btn" id="avatar-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Your account">
+        <span id="avatar-initials">?</span>
+      </button>
+      <div class="menu" id="acct-menu" role="menu" hidden>
+        <div class="menu-head">
+          <p class="menu-name" id="menu-name">—</p>
+          <p class="menu-email" id="menu-email">—</p>
+          <span class="menu-plan" id="menu-plan">Free</span>
+        </div>
+        <button class="menu-item" id="menu-breakdowns" role="menuitem">
+          <span>Your breakdowns</span>
+        </button>
+        <button class="menu-item" id="menu-settings" role="menuitem">
+          <span>Settings</span>
+        </button>
+        <button class="menu-item" id="menu-billing" role="menuitem">
+          <span>Billing</span>
+        </button>
+        <div class="menu-row">
+          <span>Dark mode</span>
+          <button class="switch" id="menu-theme" role="switch" aria-checked="false" aria-label="Dark mode"><i></i></button>
+        </div>
+        <button class="menu-item danger" id="menu-signout" role="menuitem">
+          <span>Sign out</span>
+        </button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -26,6 +62,8 @@
 
   <!-- ===== WELCOME ===== -->
   <section class="screen active" id="screen-welcome">
+    <div class="status-bar" id="status-bar" hidden></div>
+
     <div class="hero">
       <div class="hero-copy">
         <p class="eyebrow">Reverse-engineer the winners</p>
@@ -43,36 +81,36 @@
           <title>Three viral videos resolving into one shared pattern</title>
 
           <g class="art-card art-card-1">
-            <rect x="14" y="52" width="118" height="196" rx="15" fill="#FFFFFF" stroke="#FF3D8B" stroke-width="1.5"/>
+            <rect x="14" y="52" width="118" height="196" rx="15" fill="var(--paper)" stroke="#FF3D8B" stroke-width="1.5"/>
             <rect x="28" y="70" width="66" height="7" rx="3.5" fill="#FF3D8B"/>
-            <rect x="28" y="85" width="88" height="6" rx="3" fill="#141220" opacity=".16"/>
-            <rect x="28" y="98" width="52" height="6" rx="3" fill="#141220" opacity=".16"/>
+            <rect x="28" y="85" width="88" height="6" rx="3" fill="var(--ink)" opacity=".18"/>
+            <rect x="28" y="98" width="52" height="6" rx="3" fill="var(--ink)" opacity=".18"/>
             <circle cx="73" cy="158" r="26" fill="#FF3D8B" opacity=".1"/>
             <path d="M66 148l18 10-18 10z" fill="#FF3D8B"/>
-            <rect x="28" y="212" width="44" height="6" rx="3" fill="#141220" opacity=".12"/>
-            <rect x="28" y="225" width="62" height="6" rx="3" fill="#141220" opacity=".12"/>
+            <rect x="28" y="212" width="44" height="6" rx="3" fill="var(--ink)" opacity=".12"/>
+            <rect x="28" y="225" width="62" height="6" rx="3" fill="var(--ink)" opacity=".12"/>
           </g>
 
           <g class="art-card art-card-2">
-            <rect x="164" y="26" width="126" height="210" rx="16" fill="#FFFFFF" stroke="#8FD9F5" stroke-width="1.5"/>
+            <rect x="164" y="26" width="126" height="210" rx="16" fill="var(--paper)" stroke="#8FD9F5" stroke-width="1.5"/>
             <rect x="180" y="46" width="74" height="7" rx="3.5" fill="#1B7FA8"/>
-            <rect x="180" y="62" width="94" height="6" rx="3" fill="#141220" opacity=".16"/>
-            <rect x="180" y="75" width="58" height="6" rx="3" fill="#141220" opacity=".16"/>
+            <rect x="180" y="62" width="94" height="6" rx="3" fill="var(--ink)" opacity=".18"/>
+            <rect x="180" y="75" width="58" height="6" rx="3" fill="var(--ink)" opacity=".18"/>
             <circle cx="227" cy="140" r="28" fill="#8FD9F5" opacity=".22"/>
             <path d="M219 129l19 11-19 11z" fill="#1B7FA8"/>
-            <rect x="180" y="198" width="50" height="6" rx="3" fill="#141220" opacity=".12"/>
-            <rect x="180" y="211" width="70" height="6" rx="3" fill="#141220" opacity=".12"/>
+            <rect x="180" y="198" width="50" height="6" rx="3" fill="var(--ink)" opacity=".12"/>
+            <rect x="180" y="211" width="70" height="6" rx="3" fill="var(--ink)" opacity=".12"/>
           </g>
 
           <g class="art-card art-card-3">
-            <rect x="322" y="52" width="118" height="196" rx="15" fill="#FFFFFF" stroke="#C9B8FF" stroke-width="1.5"/>
+            <rect x="322" y="52" width="118" height="196" rx="15" fill="var(--paper)" stroke="#C9B8FF" stroke-width="1.5"/>
             <rect x="336" y="70" width="60" height="7" rx="3.5" fill="#7A5CD6"/>
-            <rect x="336" y="85" width="86" height="6" rx="3" fill="#141220" opacity=".16"/>
-            <rect x="336" y="98" width="46" height="6" rx="3" fill="#141220" opacity=".16"/>
+            <rect x="336" y="85" width="86" height="6" rx="3" fill="var(--ink)" opacity=".18"/>
+            <rect x="336" y="98" width="46" height="6" rx="3" fill="var(--ink)" opacity=".18"/>
             <circle cx="381" cy="158" r="26" fill="#C9B8FF" opacity=".26"/>
             <path d="M374 148l18 10-18 10z" fill="#7A5CD6"/>
-            <rect x="336" y="212" width="56" height="6" rx="3" fill="#141220" opacity=".12"/>
-            <rect x="336" y="225" width="40" height="6" rx="3" fill="#141220" opacity=".12"/>
+            <rect x="336" y="212" width="56" height="6" rx="3" fill="var(--ink)" opacity=".12"/>
+            <rect x="336" y="225" width="40" height="6" rx="3" fill="var(--ink)" opacity=".12"/>
           </g>
 
           <g class="art-lines" stroke-dasharray="4 6" stroke-width="1.5" stroke-linecap="round" fill="none">
@@ -82,7 +120,7 @@
           </g>
 
           <g class="art-node">
-            <rect x="96" y="322" width="262" height="86" rx="18" fill="#141220"/>
+            <rect x="96" y="322" width="262" height="86" rx="18" fill="var(--node)"/>
             <circle cx="128" cy="352" r="9" fill="#FF3D8B"/>
             <path d="M124 352l3 3.5 6-6.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
             <rect x="147" y="347" width="128" height="8" rx="4" fill="#FFFFFF" opacity=".92"/>
@@ -109,8 +147,8 @@
     <h2>New breakdown</h2>
     <label class="field">
       <span class="field-label">What's the product or topic?</span>
-      <input type="text" id="topic" placeholder="Apple Pencil" autocomplete="off" spellcheck="false">
-      <span class="field-hint">Be specific. "Apple Pencil" works. "Tech" doesn't.</span>
+      <input type="text" id="topic" placeholder="Sol de Janeiro Cheirosa 62" autocomplete="off" spellcheck="false">
+      <span class="field-hint">Be specific. A product name works; a category doesn't.</span>
     </label>
 
     <div class="links-head">
@@ -195,7 +233,7 @@
 
       <label class="field">
         <span class="field-label">Full name</span>
-        <input type="text" id="su-name" autocomplete="name" placeholder="Charley Smith">
+        <input type="text" id="su-name" autocomplete="name" placeholder="First and last name">
       </label>
 
       <label class="field">
@@ -268,6 +306,49 @@
 
       <p class="error" id="rp-error" hidden></p>
       <button class="btn btn-primary btn-block" id="rp-submit">Save new password</button>
+    </div>
+  </section>
+
+  <!-- ===== SETTINGS ===== -->
+  <section class="screen" id="screen-settings">
+    <button class="back" data-back="welcome">Back</button>
+    <h2>Settings</h2>
+    <p class="lede sm">Your account and how the app behaves.</p>
+
+    <div class="panel setting-group">
+      <h3>Account</h3>
+      <div class="setting-row"><span class="setting-k">Name</span><span class="setting-v" id="set-name">—</span></div>
+      <div class="setting-row"><span class="setting-k">Email</span><span class="setting-v" id="set-email">—</span></div>
+      <div class="setting-row"><span class="setting-k">Plan</span><span class="setting-v" id="set-plan">—</span></div>
+      <div class="setting-row"><span class="setting-k">Renews</span><span class="setting-v" id="set-renews">—</span></div>
+    </div>
+
+    <div class="panel setting-group">
+      <h3>Preferences</h3>
+      <div class="setting-row">
+        <span class="setting-k">Dark mode</span>
+        <button class="switch" id="set-theme" role="switch" aria-checked="false" aria-label="Dark mode"><i></i></button>
+      </div>
+      <div class="setting-row">
+        <span class="setting-k">Default scripts<em>How many to generate each time</em></span>
+        <div class="mini-step">
+          <button id="set-scripts-dec" aria-label="Fewer">–</button>
+          <span class="mono" id="set-scripts">3</span>
+          <button id="set-scripts-inc" aria-label="More">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel setting-group">
+      <h3>Billing</h3>
+      <p class="setting-note">Cancel, change your card or download invoices. Handled by Stripe.</p>
+      <button class="btn btn-quiet btn-block btn-sm" id="set-billing">Open billing portal</button>
+    </div>
+
+    <div class="panel setting-group">
+      <h3>Danger zone</h3>
+      <p class="setting-note">Sign out on this device. Your breakdowns stay saved to your account.</p>
+      <button class="btn btn-quiet btn-block btn-sm" id="set-signout">Sign out</button>
     </div>
   </section>
 

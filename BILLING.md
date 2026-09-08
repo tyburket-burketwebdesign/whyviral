@@ -342,3 +342,35 @@ is one less hop and one less thing to explain.
 
 Whatever the cause, the person now lands on the sign-in card with a message
 telling them to request a fresh one, instead of a homepage with a broken URL.
+
+---
+
+# The signed-in experience
+
+**Account menu** — circular avatar with initials, top right. Name, email, plan
+badge with days remaining, links to breakdowns, settings and billing, a dark
+mode switch, and sign out. Closes on outside click and on Escape.
+
+**Trial status** sits at the top of the app: days remaining, what happens next
+and on what date, with a progress bar. Near the end the header chip turns a
+deeper pink. A cancelled trial says so rather than silently counting down.
+
+**Settings** — name, email, plan, renewal date, dark mode, default number of
+scripts, billing portal, sign out.
+
+**Dark mode** persists per device and is applied by an inline script before
+first paint, so there is no white flash on load. The palette is rotated rather
+than inverted: pure inversion makes the pink vibrate against black.
+
+## Before launch
+
+**Testimonials.** `#voices` on the marketing page is built and hidden, with
+three slots. Put real quotes in and remove `hidden`. Do not invent them — the
+FTC's rule on fake reviews carries civil penalties per violation, and a specific
+real quote from one of Charley's followers will outperform an invented generic
+one anyway.
+
+**The founder quote** is a placeholder too. Replace it with Charley's own words.
+
+**Examples** across the site now use products this audience actually searches —
+Rhode, Sol de Janeiro, Dyson Airwrap — rather than an Apple Pencil.

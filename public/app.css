@@ -3,7 +3,35 @@
   --ink:#141220; --ink-2:#3A3648; --ink-3:#6B6879; --ink-4:#9A97A8;
   --cream:#FFF7F2; --paper:#FFFFFF; --line:rgba(20,18,32,.12); --line-2:rgba(20,18,32,.07);
   --lilac:#C9B8FF; --radius:12px; --maxw:560px; --maxw-wide:1120px; --maxw-read:660px;
+  --shadow:0 24px 60px -34px rgba(20,18,32,.30);
+  --overlay:rgba(20,18,32,.42);
+  --topbar:rgba(255,247,242,.92);
+  --node:#141220;          /* the dark panel in the hero art */
+  --art-line:rgba(20,18,32,.14);
 }
+
+/* Dark theme. Same palette rotated rather than inverted — pure inversion makes
+   pink vibrate against black, so the accents lift slightly and the surfaces
+   stay warm rather than going grey. */
+[data-theme="dark"]{
+  --pink:#FF5C9E; --pink-deep:#FF8ABA; --blue:#8FD9F5; --blue-deep:#8FD9F5;
+  --ink:#F4F2F7; --ink-2:#C7C3D2; --ink-3:#948FA6; --ink-4:#6E6982;
+  --cream:#100E18; --paper:#1A1725;
+  --line:rgba(255,255,255,.13); --line-2:rgba(255,255,255,.07);
+  --shadow:0 24px 60px -30px rgba(0,0,0,.7);
+  --overlay:rgba(0,0,0,.6);
+  --topbar:rgba(16,14,24,.92);
+  --node:#2A2540;
+  --art-line:rgba(255,255,255,.16);
+  color-scheme:dark;
+}
+[data-theme="dark"] .finding{background:var(--paper)}
+[data-theme="dark"] .auth-card input{background:rgba(255,255,255,.04)}
+[data-theme="dark"] .auth-card input:focus{background:rgba(255,255,255,.07)}
+[data-theme="dark"] .step-btn{background:rgba(255,255,255,.05)}
+[data-theme="dark"] .fake-find,[data-theme="dark"] .empty{background:var(--paper)}
+html{transition:none}
+body,.topbar,.auth-card,.panel,.finding,.script,.hist{transition:background .18s,border-color .18s,color .18s}
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
 body{
@@ -18,12 +46,13 @@ body{
 /* ---------- chrome ---------- */
 .topbar{
   position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between;
-  padding:14px 20px; background:rgba(255,247,242,.92); backdrop-filter:blur(10px);
+  padding:14px 20px; background:var(--topbar); backdrop-filter:blur(10px);
   border-bottom:1px solid var(--line-2);
 }
 .brand{
   background:none; border:0; cursor:pointer; font-family:inherit;
   font-size:19px; font-weight:700; letter-spacing:-.045em; color:var(--ink); padding:0;
+  text-decoration:none;
 }
 .brand-why{color:var(--pink)}
 .ghost-btn{
@@ -485,3 +514,92 @@ body.booting .screen{display:none !important}
   font-size:13.5px;color:var(--pink-deep);background:rgba(255,61,139,.08);
   padding:11px 13px;border-radius:9px;margin-bottom:14px;line-height:1.5;
 }
+
+/* ================= account menu ================= */
+.acct{display:flex;align-items:center;gap:12px}
+.avatar-wrap{position:relative}
+.avatar-btn{
+  width:34px;height:34px;border-radius:50%;border:0;cursor:pointer;
+  background:linear-gradient(140deg,var(--pink),var(--lilac));
+  color:#fff;font-family:inherit;font-size:12.5px;font-weight:600;letter-spacing:-.01em;
+  display:grid;place-items:center;transition:transform .12s,box-shadow .16s;
+}
+.avatar-btn:hover{transform:scale(1.05)}
+.avatar-btn:active{transform:scale(.97)}
+
+.menu{
+  position:absolute;top:calc(100% + 10px);right:0;width:252px;z-index:60;
+  background:var(--paper);border:1px solid var(--line);border-radius:14px;
+  box-shadow:var(--shadow);padding:6px;
+  animation:menuIn .14s cubic-bezier(.2,.7,.3,1);
+}
+@keyframes menuIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.menu-head{padding:12px 12px 13px;border-bottom:1px solid var(--line-2);margin-bottom:6px}
+.menu-name{font-size:14.5px;font-weight:600;letter-spacing:-.015em;line-height:1.3}
+.menu-email{font-size:12.5px;color:var(--ink-3);margin-top:2px;word-break:break-all;line-height:1.4}
+.menu-plan{
+  display:inline-block;margin-top:9px;font-family:'JetBrains Mono',monospace;
+  font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+  background:rgba(255,61,139,.12);color:var(--pink-deep);padding:3px 8px;border-radius:99px;
+}
+.menu-item,.menu-row{
+  display:flex;align-items:center;justify-content:space-between;width:100%;
+  font-family:inherit;font-size:14px;color:var(--ink-2);background:none;border:0;
+  padding:10px 12px;border-radius:9px;cursor:pointer;text-align:left;
+}
+.menu-item:hover{background:var(--cream);color:var(--ink)}
+.menu-item.danger{color:var(--pink-deep);margin-top:4px;border-top:1px solid var(--line-2);border-radius:0 0 9px 9px}
+.menu-row{cursor:default}
+
+.switch{
+  width:38px;height:22px;border-radius:99px;border:0;background:rgba(20,18,32,.16);
+  cursor:pointer;padding:0;position:relative;transition:background .18s;flex:0 0 38px;
+}
+.switch i{
+  position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;
+  background:#fff;transition:transform .18s;display:block;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
+}
+.switch[aria-checked="true"]{background:var(--pink)}
+.switch[aria-checked="true"] i{transform:translateX(16px)}
+
+/* ================= trial status ================= */
+.trial-chip{
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.04em;
+  padding:5px 10px;border-radius:99px;white-space:nowrap;
+  background:rgba(255,61,139,.11);color:var(--pink-deep);
+}
+.trial-chip.warn{background:rgba(255,61,139,.18)}
+.trial-chip.pro{background:rgba(143,217,245,.26);color:var(--blue-deep)}
+@media(max-width:560px){.trial-chip{display:none}}
+
+.status-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 16px;margin-bottom:26px;
+}
+.status-main{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.status-title{font-size:14.5px;font-weight:600;letter-spacing:-.015em}
+.status-sub{font-size:13px;color:var(--ink-3)}
+.status-bar .btn{padding:9px 16px;font-size:13.5px}
+.status-track{width:100%;height:4px;background:rgba(20,18,32,.09);border-radius:99px;overflow:hidden;margin-top:2px}
+.status-track i{display:block;height:100%;background:var(--pink);border-radius:99px}
+
+/* ================= settings ================= */
+.setting-group{margin-bottom:14px}
+.setting-group h3{margin-bottom:12px}
+.setting-row{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:11px 0;border-top:1px solid var(--line-2);
+}
+.setting-group h3 + .setting-row{border-top:0;padding-top:0}
+.setting-k{font-size:14px;color:var(--ink-2);display:flex;flex-direction:column;gap:2px}
+.setting-k em{font-style:normal;font-size:12px;color:var(--ink-4)}
+.setting-v{font-size:14px;color:var(--ink);text-align:right;word-break:break-all}
+.setting-note{font-size:13px;color:var(--ink-3);line-height:1.55;margin-bottom:12px}
+.mini-step{display:flex;align-items:center;gap:10px}
+.mini-step button{
+  width:28px;height:28px;border-radius:7px;border:1px solid var(--line);
+  background:var(--cream);color:var(--ink);font-size:16px;line-height:1;cursor:pointer;font-family:inherit;
+}
+.mini-step button:hover{border-color:var(--pink);color:var(--pink)}

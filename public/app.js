@@ -476,37 +476,189 @@ function renderPaywall(info, acct) {
   $('#paywall-error').hidden = true;
 }
 
+/* Theme. Stored per-device, applied before the first paint by an inline
+   script in app.html so there is no flash of the wrong theme. */
+const THEME_KEY = 'whyviral.theme.v1';
+function currentTheme() {
+  try { return localStorage.getItem(THEME_KEY) || 'light'; } catch { return 'light'; }
+}
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+  try { localStorage.setItem(THEME_KEY, t); } catch {}
+  document.querySelectorAll('.switch').forEach(s => s.setAttribute('aria-checked', String(t === 'dark')));
+}
+function toggleTheme() { applyTheme(currentTheme() === 'dark' ? 'light' : 'dark'); }
+applyTheme(currentTheme());
+$('#menu-theme')?.addEventListener('click', toggleTheme);
+$('#set-theme')?.addEventListener('click', toggleTheme);
+
+const initialsOf = (name, email) => {
+  const n = (name || '').trim();
+  if (n) return n.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  return (email || '?').slice(0, 2).toUpperCase();
+};
+
+/* Account menu open/close, including the click-outside and Escape that make a
+   dropdown feel finished rather than bolted on. */
+const menuEl = $('#acct-menu'), avatarBtn = $('#avatar-btn');
+function setMenu(open) {
+  if (!menuEl) return;
+  menuEl.hidden = !open;
+  avatarBtn?.setAttribute('aria-expanded', String(open));
+}
+avatarBtn?.addEventListener('click', e => { e.stopPropagation(); setMenu(menuEl.hidden); });
+document.addEventListener('click', e => { if (menuEl && !menuEl.hidden && !e.target.closest('.avatar-wrap')) setMenu(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
+
+function daysLeft(iso) {
+  if (!iso) return null;
+  /* Round, not floor or ceil. Floor turns "exactly 5 days" into 4 because a
+     few milliseconds have passed; ceil turns "3 hours left" into "1 day left".
+     Rounding reads correctly at both ends. */
+  const d = Math.round((new Date(iso).getTime() - Date.now()) / 86400000);
+  return isFinite(d) ? Math.max(0, d) : null;
+}
+const fmtDate = iso => {
+  try { return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); }
+  catch { return '—'; }
+};
+
+function renderStatus(s) {
+  const bar = $('#status-bar');
+  if (!bar) return;
+  bar.innerHTML = '';
+  if (!s.billing || !s.signedIn) { bar.hidden = true; return; }
+
+  const left = daysLeft(s.renewsAt);
+  const main = el('div', 'status-main');
+
+  if (s.status === 'trialing') {
+    main.appendChild(el('span', 'status-title', left === 0 ? 'Trial ends today' : `${left} day${left === 1 ? '' : 's'} left in your trial`));
+    main.appendChild(el('span', 'status-sub', s.cancelAtPeriodEnd
+      ? 'Cancelled — access ends when the trial does.'
+      : `Then $29 a month from ${fmtDate(s.renewsAt)}.`));
+  } else if (s.subscribed) {
+    main.appendChild(el('span', 'status-title', 'Pro — unlimited breakdowns'));
+    main.appendChild(el('span', 'status-sub', s.cancelAtPeriodEnd
+      ? `Cancelled. Access until ${fmtDate(s.renewsAt)}.`
+      : (s.renewsAt ? `Renews ${fmtDate(s.renewsAt)}.` : '')));
+  } else if (s.trialMode === 'card') {
+    main.appendChild(el('span', 'status-title', 'Your trial has not started'));
+    main.appendChild(el('span', 'status-sub', `${s.trialDays || 7} days free, then $29 a month.`));
+  } else {
+    main.appendChild(el('span', 'status-title', `${s.remaining} free breakdown${s.remaining === 1 ? '' : 's'} left`));
+    main.appendChild(el('span', 'status-sub', 'Subscribe for unlimited.'));
+  }
+  bar.appendChild(main);
+
+  if (!s.subscribed) {
+    const b = el('button', 'btn btn-primary', s.trialMode === 'card' ? 'Start free trial' : 'Subscribe');
+    b.onclick = () => { renderPaywall(null, s); show('paywall'); };
+    bar.appendChild(b);
+  } else if (s.status === 'trialing' && left !== null) {
+    const track = el('div', 'status-track');
+    const fill = el('i');
+    const total = s.trialDays || 7;
+    fill.style.width = Math.min(100, Math.round(((total - left) / total) * 100)) + '%';
+    track.appendChild(fill);
+    bar.appendChild(track);
+  }
+  bar.hidden = false;
+}
+
 async function refreshAccount() {
   const s = await WV_AUTH.status(true);
-  const bar = $('#acct-state');
-  if (!bar) return s;
-  bar.innerHTML = '';
-  if (!s.billing) { bar.hidden = true; return s; }
-  bar.hidden = false;
+  const chip = $('#trial-chip'), wrap = $('#avatar-wrap'), signin = $('#nav-signin');
 
-  if (s.subscribed) {
-    bar.appendChild(el('span', 'trial-pill', s.status === 'trialing' ? 'Trial' : 'Pro'));
-    const m = $('#paywall-manage'); if (m) m.hidden = false;
-  } else if (s.trialMode === 'card') {
-    bar.appendChild(el('span', 'trial-pill', `${s.trialDays || 7}-day trial`));
-  } else if (typeof s.remaining === 'number') {
-    bar.appendChild(el('span', 'trial-pill', `${s.remaining} free left`));
+  if (!s.billing) {
+    if (chip) chip.hidden = true;
+    if (wrap) wrap.hidden = true;
+    if (signin) signin.hidden = true;
+    renderStatus(s);
+    return s;
   }
+
+  if (s.signedIn) {
+    if (signin) signin.hidden = true;
+    if (wrap) wrap.hidden = false;
+    $('#avatar-initials').textContent = initialsOf(s.name, s.email);
+    $('#menu-name').textContent = s.name || 'Your account';
+    $('#menu-email').textContent = s.email || '';
+    const left = daysLeft(s.renewsAt);
+    $('#menu-plan').textContent = s.status === 'trialing' ? `Trial · ${left ?? '–'}d left`
+      : (s.subscribed ? 'Pro' : 'No plan');
+
+    if (chip) {
+      if (s.status === 'trialing') {
+        chip.className = 'trial-chip' + (left !== null && left <= 2 ? ' warn' : '');
+        chip.textContent = left === 0 ? 'Ends today' : `${left}d left`;
+        chip.hidden = false;
+      } else if (s.subscribed) {
+        chip.className = 'trial-chip pro'; chip.textContent = 'Pro'; chip.hidden = false;
+      } else if (s.trialMode !== 'card' && typeof s.remaining === 'number') {
+        chip.className = 'trial-chip'; chip.textContent = `${s.remaining} free`; chip.hidden = false;
+      } else { chip.hidden = true; }
+    }
+
+    $('#set-name').textContent = s.name || '—';
+    $('#set-email').textContent = s.email || '—';
+    $('#set-plan').textContent = s.status === 'trialing' ? 'Free trial' : (s.subscribed ? 'Pro' : 'No plan');
+    $('#set-renews').textContent = s.renewsAt ? fmtDate(s.renewsAt) : '—';
+  } else {
+    if (wrap) wrap.hidden = true;
+    if (chip) chip.hidden = true;
+    if (signin) signin.hidden = false;
+  }
+
   try { renderPaywall(null, s); } catch {}
+  renderStatus(s);
   const note = $('#hero-note');
   if (note) {
-    note.textContent = s.subscribed ? 'You have full access. Paste your links below.'
+    note.textContent = s.subscribed ? 'Paste your links below.'
       : (s.trialMode === 'card' ? `${s.trialDays || 7} days free, then $29 a month. Cancel any time.`
                                 : 'No account needed for your first breakdown.');
   }
-  const btn = el('button', 'ghost-btn', s.signedIn ? 'Sign out' : 'Sign in');
-  btn.onclick = async () => {
-    if (s.signedIn) { WV_AUTH.signOut(); WV_AUTH.invalidate(); await refreshAccount(); show('welcome'); }
-    else show('signup');
-  };
-  bar.appendChild(btn);
   return s;
 }
+
+async function doSignOut() {
+  WV_AUTH.signOut(); WV_AUTH.invalidate();
+  setMenu(false);
+  await refreshAccount();
+  show('welcome');
+  toast('Signed out');
+}
+$('#menu-signout')?.addEventListener('click', doSignOut);
+$('#set-signout')?.addEventListener('click', doSignOut);
+$('#nav-signin')?.addEventListener('click', () => show('auth'));
+$('#menu-settings')?.addEventListener('click', () => { setMenu(false); show('settings'); });
+$('#menu-breakdowns')?.addEventListener('click', () => { setMenu(false); renderHistory(); show('history'); });
+
+async function openBilling() {
+  try {
+    const r = await WV_AUTH.apiFetch('/api/portal', { method: 'POST' });
+    const j = await r.json();
+    if (j.url) { location.href = j.url; return; }
+    toast(j.message || 'No billing account yet.');
+  } catch { toast('Could not open billing.'); }
+}
+$('#menu-billing')?.addEventListener('click', () => { setMenu(false); openBilling(); });
+$('#set-billing')?.addEventListener('click', openBilling);
+
+/* Default script count, remembered between visits. */
+const SCRIPTS_KEY = 'whyviral.scripts.v1';
+try {
+  const saved = parseInt(localStorage.getItem(SCRIPTS_KEY) || '3', 10);
+  if (saved >= 1 && saved <= 6) scriptCount = saved;
+} catch {}
+const setScriptsLabel = () => { const e = $('#set-scripts'); if (e) e.textContent = scriptCount; };
+setScriptsLabel();
+$('#set-scripts-dec')?.addEventListener('click', () => {
+  if (scriptCount > 1) { scriptCount--; try { localStorage.setItem(SCRIPTS_KEY, scriptCount); } catch {} setScriptsLabel(); updateStepper(); }
+});
+$('#set-scripts-inc')?.addEventListener('click', () => {
+  if (scriptCount < 6) { scriptCount++; try { localStorage.setItem(SCRIPTS_KEY, scriptCount); } catch {} setScriptsLabel(); updateStepper(); }
+});
 
 const showErr = (sel, m) => { const e = $(sel); e.textContent = m; e.hidden = false; };
 const clearErr = sel => { const e = $(sel); if (e) e.hidden = true; };

@@ -56,7 +56,7 @@ check('card mode does not claim "no card"', !/no card/i.test($('#hero-note').tex
 check('free mode says no account needed', /no account needed/i.test($('#hero-note').textContent), $('#hero-note').textContent);
 
 ({ $ } = await boot('', { subscribed: true, status: 'active' }));
-check('subscriber sees full-access copy', /full access/i.test($('#hero-note').textContent), $('#hero-note').textContent);
+check('subscriber sees unrestricted copy', /paste your links/i.test($('#hero-note').textContent), $('#hero-note').textContent);
 
 console.log(`\n--- ${pass} passed, ${fail} failed ---`);
 process.exit(fail ? 1 : 0);

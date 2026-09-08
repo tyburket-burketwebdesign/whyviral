@@ -32,6 +32,7 @@ async function onRequestGet({ request, env }) {
       billing: true,
       signedIn: !!claims,
       email: account.email || null,
+      name: account.full_name || null,
       plan: ent.plan,
       status: ent.status,
       subscribed: active,
